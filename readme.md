@@ -78,4 +78,13 @@ docker push "$USER/turtle2openscad:$TAG"
 docker push "$USER/turtle2openscad:latest"
 ```
 
-
+## Docker Compose
+```json
+services:
+  turtle2openscad:
+    image: becdetat/turtle2openscad:latest
+    container_name: turtle2openscad
+    ports:
+      - 8080:80
+    restart: unless-stopped
+```
