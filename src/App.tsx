@@ -40,6 +40,7 @@ export default function App() {
   const [speed, setSpeed] = useState(10)
   const [progress, setProgress] = useState(0)
   const [settingsOpen, setSettingsOpen] = useState(false)
+  const [activeSegments, setActiveSegments] = useState<ReturnType<typeof executeTurtle>['segments']>([])
 
   const parseResult = useMemo(() => parseTurtle(source), [source])
   const runResult = useMemo(
@@ -48,6 +49,10 @@ export default function App() {
   )
   const openScad = useMemo(() => generateOpenScad(runResult.polygons), [runResult.polygons])
 
+  useEffect(() => {
+    runResultRef.current = runResult
+  }, [runResult])
+
   const canvasRef = useRef<HTMLCanvasElement | null>(null)
   const rafRef = useRef<number | null>(null)
   const lastTsRef = useRef<number | null>(null)
@@ -55,8 +60,10 @@ export default function App() {
   const monacoRef = useRef<typeof Monaco | null>(null)
   const editorRef = useRef<Monaco.editor.IStandaloneCodeEditor | null>(null)
   const decorationsRef = useRef<string[]>([])
+  const runResultRef = useRef(runResult)
 
   const handlePlay = () => {
+    setActiveSegments(runResult.segments)
     setProgress(0)
     lastTsRef.current = null
     setIsPlaying(true)
@@ -68,11 +75,10 @@ export default function App() {
 
   useEffect(() => {
     setIsPlaying(false)
-    setProgress(0)
   }, [source])
 
   useEffect(() => {
-    const segments = runResult.segments
+    const segments = activeSegments
     const total = segments.length
     if (!isPlaying) {
       if (rafRef.current != null) cancelAnimationFrame(rafRef.current)
@@ -116,7 +122,7 @@ export default function App() {
       rafRef.current = null
       lastTsRef.current = null
     }
-  }, [isPlaying, runResult.segments.length, speed])
+  }, [isPlaying, activeSegments, speed])
 
   useEffect(() => {
     const canvas = canvasRef.current
@@ -136,15 +142,15 @@ export default function App() {
     drawPreview(
       ctx,
       canvas,
-      runResult.segments,
-      clamp(progress, 0, runResult.segments.length),
+      activeSegments,
+      clamp(progress, 0, activeSegments.length),
       {
         penDown: theme.palette.primary.main,
         penUp: theme.palette.text.secondary,
         axis: alpha(theme.palette.text.secondary, 0.4),
       },
     )
-  }, [progress, runResult.segments, theme.palette.primary.main, theme.palette.text.secondary])
+  }, [progress, activeSegments, theme.palette.primary.main, theme.palette.text.secondary])
 
   useEffect(() => {
     const monaco = monacoRef.current
@@ -179,6 +185,14 @@ export default function App() {
   const onEditorMount: OnMount = (editor, monaco) => {
     editorRef.current = editor
     monacoRef.current = monaco
+
+    // Add Ctrl+Enter keyboard shortcut to run preview
+    editor.addCommand(monaco.KeyMod.CtrlCmd | monaco.KeyCode.Enter, () => {
+      setActiveSegments(runResultRef.current.segments)
+      setProgress(0)
+      lastTsRef.current = null
+      setIsPlaying(true)
+    })
   }
 
   const onCopy = async () => {
