@@ -21,6 +21,9 @@ const aliasToKind: Record<string, TurtleCommandKind> = {
   PD: 'PD',
   PENDOWN: 'PD',
   ARC: 'ARC',
+  SETX: 'SETX',
+  SETY: 'SETY',
+  SETXY: 'SETXY',
 }
 
 function rangeForSegment(lineNumber: number, startCol: number, endCol: number): SourceRange {
@@ -107,24 +110,27 @@ export function parseTurtle(source: string): ParseResult {
 
         if (!kind) {
           diagnostics.push(diagnostic(`Unknown command: ${cmdRaw}`, segRange))
-        } else if (kind === 'ARC') {
+        } else if (kind === 'ARC' || kind === 'SETXY') {
+          // These commands require two numbers
           if (parts.length < 3) {
-            diagnostics.push(diagnostic(`${cmdText} requires two numbers (angle, radius)`, segRange))
+            kind === "ARC" && diagnostics.push(diagnostic("ARC requires two numbers (angle, radius)", segRange));
+            kind === "SETXY" && diagnostics.push(diagnostic("SETXY requires two numbers (xcor, ycor)", segRange));
           } else if (parts.length > 3) {
             diagnostics.push(diagnostic(`Too many tokens for ${cmdText}`, segRange))
           } else {
-            const angle = Number(parts[1])
-            const radius = Number(parts[2])
-            if (!Number.isFinite(angle)) {
-              diagnostics.push(diagnostic(`Invalid angle: ${parts[1]}`, segRange))
-            } else if (!Number.isFinite(radius)) {
-              diagnostics.push(diagnostic(`Invalid radius: ${parts[2]}`, segRange))
+            const val1 = Number(parts[1])
+            const val2 = Number(parts[2])
+            if (!Number.isFinite(val1)) {
+              diagnostics.push(diagnostic(`Invalid number: ${parts[1]}`, segRange))
+            } else if (!Number.isFinite(val2)) {
+              diagnostics.push(diagnostic(`Invalid number: ${parts[2]}`, segRange))
             } else {
-              commands.push({ kind, value: angle, value2: radius, sourceLine: lineNumber })
+              commands.push({ kind, value: val1, value2: val2, sourceLine: lineNumber })
             }
           }
         } else {
-          const expectsNumber = kind === 'FD' || kind === 'BK' || kind === 'LT' || kind === 'RT'
+          // These commands require zero or one numbers
+          const expectsNumber = kind === 'FD' || kind === 'BK' || kind === 'LT' || kind === 'RT' || kind === 'SETX' || kind === 'SETY'
 
           if (expectsNumber) {
             if (parts.length < 2) {

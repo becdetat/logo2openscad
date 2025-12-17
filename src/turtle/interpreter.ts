@@ -81,6 +81,38 @@ export function executeTurtle(
           currentPolygon = [{ x, y }]
         }
         break
+      case 'SETX': {
+        const nx = cmd.value ?? 0
+        segments.push({ from: { x, y }, to: { x: nx, y }, penDown })
+        x = nx
+        if (penDown) {
+          ensurePolygonStarted()
+          currentPolygon!.push({ x, y })
+        }
+        break
+      }
+      case 'SETY': {
+        const ny = cmd.value ?? 0
+        segments.push({ from: { x, y }, to: { x, y: ny }, penDown })
+        y = ny
+        if (penDown) {
+          ensurePolygonStarted()
+          currentPolygon!.push({ x, y })
+        }
+        break
+      }
+      case 'SETXY': {
+        const nx = cmd.value ?? 0
+        const ny = cmd.value2 ?? 0
+        segments.push({ from: { x, y }, to: { x: nx, y: ny }, penDown })
+        x = nx
+        y = ny
+        if (penDown) {
+          ensurePolygonStarted()
+          currentPolygon!.push({ x, y })
+        }
+        break
+      }
       case 'FD':
       case 'BK': {
         const value = cmd.value ?? 0
