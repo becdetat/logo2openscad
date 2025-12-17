@@ -25,6 +25,9 @@ Only a very small subset of the Berkeley Logo dialect is included. At the moment
 	- `PU` / `PENUP`
 	- `PD` / `PENDOWN`
 	- `ARC <angle> <radius>` - draws an arc with turtle at center, starting at turtle's heading, extending clockwise through the angle. Turtle does not move.
+  - `SETX <n>` - move the turtle to the absolute X coordinate 
+  - `SETY <n>` - move the turtle to the absolute Y coordinate 
+  - `SETXY <n> <n>` - move the turtle to the absolute X and Y coordinates
 
 Invalid statements are reported and skipped; execution continues.
 
