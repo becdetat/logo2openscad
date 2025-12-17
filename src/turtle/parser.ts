@@ -116,9 +116,11 @@ export function parseTurtle(source: string): ParseResult {
         } else if (kind === 'ARC' || kind === 'SETXY') {
           // These commands require two numbers
           if (parts.length < 3) {
+            // Less than two numbers were provided, add diagnostics based on the command
             kind === "ARC" && diagnostics.push(diagnostic("ARC requires two numbers (angle, radius)", segRange));
             kind === "SETXY" && diagnostics.push(diagnostic("SETXY requires two numbers (xcor, ycor)", segRange));
           } else if (parts.length > 3) {
+            // More than two numbers were provided
             diagnostics.push(diagnostic(`Too many tokens for ${cmdText}`, segRange))
           } else {
             const val1 = Number(parts[1])
