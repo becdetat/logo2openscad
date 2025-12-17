@@ -14,7 +14,8 @@ Client-side web app that converts a small Turtle script into OpenSCAD `polygon(p
 Only a very small subset of the Berkeley Logo dialect is included. At the moment only basic movement and pen up/down commands are supported.
 
 - Separators: newline and `;`
-- Comments: `# ...` and `// ...` (to end of line)
+- Single line comments: `# ...` and `// ...` (to end of line)
+- Multi-line comments: `/* ... */`
 - Numbers: decimals and negative values allowed
 - Commands (long + short aliases):
 	- `FD` / `FORWARD <n>`
