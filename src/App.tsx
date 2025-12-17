@@ -321,19 +321,21 @@ export default function App() {
             </Stack>
           </Box>
           <Divider />
-          <Box sx={{ flex: 1, minHeight: 0, p: 2 }}>
-            <TextField
+          <Box sx={{ flex: 1, minHeight: 0 }}>
+            <Editor
               value={openScad}
-              fullWidth
-              multiline
-              minRows={10}
-              InputProps={{ readOnly: true }}
-              sx={{
-                height: '100%',
-                '& .MuiInputBase-root': { height: '100%', alignItems: 'flex-start' },
-                '& textarea': {
-                  fontFamily: 'ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace',
-                },
+              language="plaintext"
+              theme={theme.palette.mode === 'dark' ? 'vs-dark' : 'vs-light'}
+              options={{
+                readOnly: true,
+                minimap: { enabled: false },
+                scrollBeyondLastLine: false,
+                wordWrap: 'off',
+                lineNumbers: 'on',
+                renderLineHighlight: 'none',
+                overviewRulerBorder: false,
+                hideCursorInOverviewRuler: true,
+                folding: false,
               }}
             />
           </Box>
