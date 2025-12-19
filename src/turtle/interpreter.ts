@@ -8,6 +8,7 @@ import type {
   TurtleSegment,
 } from './types'
 import { evaluateExpression, type VariableContext } from './expression'
+import { parseTurtle } from './parser'
 
 function degToRad(deg: number) {
   return (deg * Math.PI) / 180
@@ -50,7 +51,13 @@ export function executeTurtle(
     currentPolygonComments.push(...commentsInRange)
   }
 
-  for (const cmd of commands) {
+  const executeCommands = (cmdList: TurtleCommand[]) => {
+    for (const cmd of cmdList) {
+      executeCommand(cmd)
+    }
+  }
+
+  const executeCommand = (cmd: TurtleCommand) => {
     const cmdLine = cmd.sourceLine ?? 0
 
     // Collect comments up to this command line
@@ -187,9 +194,24 @@ export function executeTurtle(
           ensurePolygonStarted()
           currentPolygon!.push({ x, y })
         }
+        break
+      }
+      case 'REPEAT': {
+        if (cmd.value && cmd.instructionList !== undefined) {
+          const count = Math.floor(evaluateExpression(cmd.value, variables))
+          if (count > 0) {
+            const repeatResult = parseTurtle(cmd.instructionList)
+            for (let i = 0; i < count; i++) {
+              executeCommands(repeatResult.commands)
+            }
+          }
+        }
+        break
       }
     }
   }
+
+  executeCommands(commands)
 
   if (penDown) {
     // Collect any remaining comments

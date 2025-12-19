@@ -29,6 +29,7 @@ const aliasToKind: Record<string, TurtleCommandKind> = {
   SETHEADING: 'SETH',
   HOME: "HOME",
   MAKE: 'MAKE',
+  REPEAT: 'REPEAT',
 }
 
 function rangeForSegment(lineNumber: number, startCol: number, endCol: number): SourceRange {
@@ -66,7 +67,38 @@ export function parseTurtle(source: string): ParseResult {
       processedSource.slice(startPos + commentText.length)
   }
 
-  const lines = processedSource.split(/\r?\n/)
+  // Second pass: normalize multi-line REPEAT commands by replacing newlines inside brackets with spaces
+  let normalizedSource = ''
+  let bracketDepth = 0
+  let inRepeat = false
+  
+  for (let i = 0; i < processedSource.length; i++) {
+    const char = processedSource[i]
+    
+    // Check if we're starting a REPEAT command
+    if (!inRepeat && i < processedSource.length - 6) {
+      const word = processedSource.slice(i, i + 6).toUpperCase()
+      if (word === 'REPEAT' && (i === 0 || /\s/.test(processedSource[i - 1]))) {
+        inRepeat = true
+      }
+    }
+    
+    if (char === '[') {
+      bracketDepth++
+      normalizedSource += char
+    } else if (char === ']') {
+      bracketDepth--
+      if (bracketDepth === 0) inRepeat = false
+      normalizedSource += char
+    } else if (char === '\n' && inRepeat && bracketDepth > 0) {
+      // Replace newlines inside REPEAT brackets with semicolon to preserve command separation
+      normalizedSource += '; '
+    } else {
+      normalizedSource += char
+    }
+  }
+
+  const lines = normalizedSource.split(/\r?\n/)
   for (let i = 0; i < lines.length; i++) {
     const lineNumber = i + 1
     const line = lines[i]
@@ -95,7 +127,18 @@ export function parseTurtle(source: string): ParseResult {
 
     let segStart = 0
     while (segStart <= content.length) {
-      const semiIdx = content.indexOf(';', segStart)
+      // Find next semicolon, but skip semicolons inside brackets
+      let semiIdx = -1
+      let bracketDepth = 0
+      for (let i = segStart; i < content.length; i++) {
+        if (content[i] === '[') bracketDepth++
+        else if (content[i] === ']') bracketDepth--
+        else if (content[i] === ';' && bracketDepth === 0) {
+          semiIdx = i
+          break
+        }
+      }
+      
       const segEnd = semiIdx >= 0 ? semiIdx : content.length
 
       const raw = content.slice(segStart, segEnd)
@@ -166,6 +209,33 @@ export function parseTurtle(source: string): ParseResult {
                   diagnostics.push(diagnostic(`Invalid expression: ${exprText}`, segRange))
                 } else {
                   commands.push({ kind, varName, value: expr, sourceLine: lineNumber })
+                }
+              }
+            }
+          }
+        } else if (kind === 'REPEAT') {
+          // REPEAT requires num [instructionlist]
+          const argsText = trimmed.slice(cmdRaw.length).trim()
+          const bracketStart = argsText.indexOf('[')
+          
+          if (bracketStart === -1) {
+            diagnostics.push(diagnostic('REPEAT requires instruction list in brackets: REPEAT num [instructions]', segRange))
+          } else {
+            const bracketEnd = argsText.lastIndexOf(']')
+            if (bracketEnd === -1 || bracketEnd < bracketStart) {
+              diagnostics.push(diagnostic('REPEAT instruction list missing closing bracket ]', segRange))
+            } else {
+              const countText = argsText.slice(0, bracketStart).trim()
+              const instructionList = argsText.slice(bracketStart + 1, bracketEnd)
+              
+              if (!countText) {
+                diagnostics.push(diagnostic('REPEAT requires a count expression', segRange))
+              } else {
+                const countExpr = parseExpression(countText)
+                if (!countExpr) {
+                  diagnostics.push(diagnostic(`Invalid expression: ${countText}`, segRange))
+                } else {
+                  commands.push({ kind, value: countExpr, instructionList, sourceLine: lineNumber })
                 }
               }
             }

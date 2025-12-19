@@ -40,6 +40,38 @@ Only a very small subset of the Berkeley Logo dialect is included, concentrating
   FD :size
   MAKE "half :size / 2; FD :half;
   ```
+- Loops can be created using the `REPEAT` command:
+  ```
+  // Draw a square
+  REPEAT 4 [FD 50; RT 90]
+
+  // Nested commands with variables
+  MAKE "size 100
+  REPEAT 3 [FD :size; LT 120]
+
+  // Multiple commands in the instruction list
+  REPEAT 6 [
+    FD 10
+    RT 30
+    FD 20
+    RT 30
+  ]
+
+  // Using expressions in the count
+  MAKE "sides 6
+  REPEAT :sides [FD 50; RT 360/:sides]
+
+  // Variables can be modified inside REPEAT
+  MAKE "len 10
+  REPEAT 4 [
+    FD :len
+    RT 90
+    MAKE "len :len + 5
+  ]
+
+  // Complex expressions with operations
+  REPEAT 3*2 [FD 10; RT 60]
+  ```
 
 Invalid statements are reported and skipped; execution continues.
 
