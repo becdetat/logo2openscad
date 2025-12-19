@@ -1,9 +1,7 @@
 import Editor from '@monaco-editor/react'
 import type { OnMount } from '@monaco-editor/react'
-import ContentCopyIcon from '@mui/icons-material/ContentCopy'
 import PauseIcon from '@mui/icons-material/Pause'
 import PlayArrowIcon from '@mui/icons-material/PlayArrow'
-import SettingsIcon from '@mui/icons-material/Settings'
 import HelpOutlineIcon from '@mui/icons-material/HelpOutline'
 import {
   Box,
@@ -27,6 +25,7 @@ import { drawPreview } from './turtle/drawPreview'
 import { useSettings } from './hooks/useSettings'
 import { HelpDialog } from './components/HelpDialog'
 import { SettingsDialog } from './components/SettingsDialog'
+import { OpenScadEditor } from './components/OpenScadEditor'
 
 const STORAGE_KEY = 'turtle2openscad:script'
 
@@ -219,14 +218,6 @@ export default function App() {
     })
   }
 
-  const onCopy = async () => {
-    try {
-      await navigator.clipboard.writeText(openScad)
-    } catch {
-      // ignore
-    }
-  }
-
   const handleSettingsOpen = () => setSettingsOpen(true)
   
   const handleSettingsClose = () => {
@@ -366,41 +357,10 @@ export default function App() {
         </Paper>
 
         <Divider orientation="vertical" flexItem />
-
-        <Paper variant="outlined" sx={{ flex: 1, minWidth: 0, display: 'flex', flexDirection: 'column' }}>
-          <Box sx={{ px: 2, py: 1 }}>
-            <Stack direction="row" alignItems="center" justifyContent="space-between">
-              <Typography variant="subtitle1">OpenSCAD</Typography>
-              <Stack direction="row" spacing={1}>
-                <IconButton aria-label="Settings" onClick={handleSettingsOpen} size="small">
-                  <SettingsIcon fontSize="small" />
-                </IconButton>
-                <IconButton aria-label="Copy OpenSCAD" onClick={onCopy} size="small">
-                  <ContentCopyIcon fontSize="small" />
-                </IconButton>
-              </Stack>
-            </Stack>
-          </Box>
-          <Divider />
-          <Box sx={{ flex: 1, minHeight: 0 }}>
-            <Editor
-              value={openScad}
-              language="plaintext"
-              theme={theme.palette.mode === 'dark' ? 'vs-dark' : 'vs-light'}
-              options={{
-                readOnly: true,
-                minimap: { enabled: false },
-                scrollBeyondLastLine: false,
-                wordWrap: 'off',
-                lineNumbers: 'on',
-                renderLineHighlight: 'none',
-                overviewRulerBorder: false,
-                hideCursorInOverviewRuler: true,
-                folding: false,
-              }}
-            />
-          </Box>
-        </Paper>
+        <OpenScadEditor 
+          openScad={openScad} 
+          handleSettingsOpen={handleSettingsOpen}
+        />
       </Box>
 
       <SettingsDialog open={settingsOpen} onClose={handleSettingsClose} />
