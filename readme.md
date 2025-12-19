@@ -13,10 +13,10 @@ Client-side web app that converts a small Turtle script into OpenSCAD `polygon(p
 
 Only a very small subset of the Berkeley Logo dialect is included. At the moment only basic movement and pen up/down commands are supported.
 
-- Separators: newline and `;`
+- Command separators: newline and `;`
 - Single line comments: `# ...` and `// ...` (to end of line)
 - Multi-line comments: `/* ... */`
-- Numbers: decimals and negative values allowed
+- Numbers: decimals allowed
 - Commands (long + short aliases):
 	- `FD` / `FORWARD <n>`
 	- `BK` / `BACK <n>`
@@ -24,12 +24,17 @@ Only a very small subset of the Berkeley Logo dialect is included. At the moment
 	- `RT` / `RIGHT <deg>`
 	- `PU` / `PENUP`
 	- `PD` / `PENDOWN`
-	- `ARC <angle> <radius>` - draws an arc with turtle at center, starting at turtle's heading, extending clockwise through the angle. Turtle does not move.
+	- `ARC <angle>, <radius>` - draws an arc with turtle at center, starting at turtle's heading, extending clockwise through the angle. Turtle does not move.
   - `SETX <n>` - move the turtle to the absolute X coordinate 
   - `SETY <n>` - move the turtle to the absolute Y coordinate 
-  - `SETXY <n> <n>` - move the turtle to the absolute X and Y coordinates
+  - `SETXY <n>, <n>` - move the turtle to the absolute X and Y coordinates
   - `SETH` / `SETHEADING <deg>` - turn the turtle to a new absolute heading, relative to the Y axis
   - `HOME` - move the turtle to the origin (0, 0) and set the heading to 0 degrees relative to the Y axis
+- Note that commands that take more than one argument require a comma between arguments
+- The following binary mathematical operations are supported: `+`, `-`, `*`, `/`, `^`
+- Unary mathematical minus is supported: `FORWARD -10` (equivalent to `BACK 10`)
+- Brackets are supported for explicit operator precedence: `LEFT (10+20)*3` (equivalent to `LEFT 90`)
+
 
 Invalid statements are reported and skipped; execution continues.
 

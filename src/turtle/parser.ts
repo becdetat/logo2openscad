@@ -6,6 +6,7 @@ import type {
   TurtleComment,
   TurtleDiagnostic,
 } from './types'
+import { parseExpression } from './expression'
 
 const aliasToKind: Record<string, TurtleCommandKind> = {
   FD: 'FD',
@@ -114,45 +115,49 @@ export function parseTurtle(source: string): ParseResult {
         if (!kind) {
           diagnostics.push(diagnostic(`Unknown command: ${cmdRaw}`, segRange))
         } else if (kind === 'ARC' || kind === 'SETXY') {
-          // These commands require two numbers
-          if (parts.length < 3) {
-            // Less than two numbers were provided, add diagnostics based on the command
-            kind === "ARC" && diagnostics.push(diagnostic("ARC requires two numbers (angle, radius)", segRange));
-            kind === "SETXY" && diagnostics.push(diagnostic("SETXY requires two numbers (xcor, ycor)", segRange));
-          } else if (parts.length > 3) {
-            // More than two numbers were provided
-            diagnostics.push(diagnostic(`Too many tokens for ${cmdText}`, segRange))
+          // These commands require two expressions separated by comma
+          const argsText = trimmed.slice(cmdRaw.length).trim()
+          const commaIdx = argsText.indexOf(',')
+          
+          if (commaIdx === -1) {
+            const errorMsg = kind === 'ARC' 
+              ? 'ARC requires two expressions separated by comma (angle, radius)'
+              : 'SETXY requires two expressions separated by comma (xcor, ycor)'
+            diagnostics.push(diagnostic(errorMsg, segRange))
           } else {
-            const val1 = Number(parts[1])
-            const val2 = Number(parts[2])
-            if (!Number.isFinite(val1)) {
-              diagnostics.push(diagnostic(`Invalid number: ${parts[1]}`, segRange))
-            } else if (!Number.isFinite(val2)) {
-              diagnostics.push(diagnostic(`Invalid number: ${parts[2]}`, segRange))
+            const expr1Text = argsText.slice(0, commaIdx).trim()
+            const expr2Text = argsText.slice(commaIdx + 1).trim()
+            
+            const expr1 = parseExpression(expr1Text)
+            const expr2 = parseExpression(expr2Text)
+            
+            if (!expr1) {
+              diagnostics.push(diagnostic(`Invalid expression: ${expr1Text}`, segRange))
+            } else if (!expr2) {
+              diagnostics.push(diagnostic(`Invalid expression: ${expr2Text}`, segRange))
             } else {
-              commands.push({ kind, value: val1, value2: val2, sourceLine: lineNumber })
+              commands.push({ kind, value: expr1, value2: expr2, sourceLine: lineNumber })
             }
           }
         } else {
-          // These commands require zero or one numbers
+          // These commands require zero or one expression
           const expectsNumber = kind === 'FD' || kind === 'BK' || kind === 'LT' || kind === 'RT' || kind === 'SETX' || kind === 'SETY' || kind === 'SETH'
 
           if (expectsNumber) {
-            if (parts.length < 2) {
-              diagnostics.push(diagnostic(`${cmdText} requires a number`, segRange))
-            } else if (parts.length > 2) {
-              diagnostics.push(diagnostic(`Too many tokens for ${cmdText}`, segRange))
+            const exprText = trimmed.slice(cmdRaw.length).trim()
+            if (!exprText) {
+              diagnostics.push(diagnostic(`${cmdText} requires an expression`, segRange))
             } else {
-              const value = Number(parts[1])
-              if (!Number.isFinite(value)) {
-                diagnostics.push(diagnostic(`Invalid number: ${parts[1]}`, segRange))
+              const expr = parseExpression(exprText)
+              if (!expr) {
+                diagnostics.push(diagnostic(`Invalid expression: ${exprText}`, segRange))
               } else {
-                commands.push({ kind, value, sourceLine: lineNumber })
+                commands.push({ kind, value: expr, sourceLine: lineNumber })
               }
             }
           } else {
             if (parts.length > 1) {
-              diagnostics.push(diagnostic(`${cmdText} does not take a number`, segRange))
+              diagnostics.push(diagnostic(`${cmdText} does not take arguments`, segRange))
             } else {
               commands.push({ kind, sourceLine: lineNumber })
             }

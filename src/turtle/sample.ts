@@ -17,5 +17,5 @@ Draw a 180 degree arc
 with a radius of 30mm
 */
 pendown;
-arc 180 30;
+arc 180, 30;
 `

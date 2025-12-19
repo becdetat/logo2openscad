@@ -7,6 +7,7 @@ import type {
   TurtlePolygon,
   TurtleSegment,
 } from './types'
+import { evaluateExpression } from './expression'
 
 function degToRad(deg: number) {
   return (deg * Math.PI) / 180
@@ -59,13 +60,13 @@ export function executeTurtle(
 
     switch (cmd.kind) {
       case 'LT':
-        headingDeg += cmd.value ?? 0
+        headingDeg += cmd.value ? evaluateExpression(cmd.value) : 0
         break
       case 'RT':
-        headingDeg -= cmd.value ?? 0
+        headingDeg -= cmd.value ? evaluateExpression(cmd.value) : 0
         break
       case 'SETH':
-        headingDeg = cmd.value ?? 0
+        headingDeg = cmd.value ? evaluateExpression(cmd.value) : 0
         break
       case 'PU':
         if (penDown) {
@@ -85,7 +86,7 @@ export function executeTurtle(
         }
         break
       case 'SETX': {
-        const nx = cmd.value ?? 0
+        const nx = cmd.value ? evaluateExpression(cmd.value) : 0
         segments.push({ from: { x, y }, to: { x: nx, y }, penDown })
         x = nx
         if (penDown) {
@@ -95,7 +96,7 @@ export function executeTurtle(
         break
       }
       case 'SETY': {
-        const ny = cmd.value ?? 0
+        const ny = cmd.value ? evaluateExpression(cmd.value) : 0
         segments.push({ from: { x, y }, to: { x, y: ny }, penDown })
         y = ny
         if (penDown) {
@@ -105,8 +106,8 @@ export function executeTurtle(
         break
       }
       case 'SETXY': {
-        const nx = cmd.value ?? 0
-        const ny = cmd.value2 ?? 0
+        const nx = cmd.value ? evaluateExpression(cmd.value) : 0
+        const ny = cmd.value2 ? evaluateExpression(cmd.value2) : 0
         segments.push({ from: { x, y }, to: { x: nx, y: ny }, penDown })
         x = nx
         y = ny
@@ -118,7 +119,7 @@ export function executeTurtle(
       }
       case 'FD':
       case 'BK': {
-        const value = cmd.value ?? 0
+        const value = cmd.value ? evaluateExpression(cmd.value) : 0
         const dist = cmd.kind === 'BK' ? -value : value
         const rad = degToRad(headingDeg)
         const nx = x + Math.sin(rad) * dist
@@ -137,8 +138,8 @@ export function executeTurtle(
         break
       }
       case 'ARC': {
-        const angleDeg = cmd.value ?? 0
-        const radius = cmd.value2 ?? 0
+        const angleDeg = cmd.value ? evaluateExpression(cmd.value) : 0
+        const radius = cmd.value2 ? evaluateExpression(cmd.value2) : 0
 
         if (radius === 0 || angleDeg === 0) break
 
@@ -173,7 +174,7 @@ export function executeTurtle(
         x = 0
         y = 0
         headingDeg = 0
-        
+
         if (penDown) {
           ensurePolygonStarted()
           currentPolygon!.push({ x, y })

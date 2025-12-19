@@ -1,3 +1,9 @@
+// Expression AST types
+export type Expression =
+  | { type: 'number'; value: number }
+  | { type: 'binary'; op: '+' | '-' | '*' | '/' | '^'; left: Expression; right: Expression }
+  | { type: 'unary'; op: '-'; operand: Expression }
+
 export type TurtleCommandKind = 'FD' | 'BK' | 'LT' | 'RT' | 'PU' | 'PD' | 'ARC' | 'SETX' | 'SETY' | 'SETXY' | 'SETH' | "HOME"
 
 export type SourceRange = {
@@ -14,8 +20,8 @@ export type TurtleDiagnostic = {
 
 export type TurtleCommand = {
   kind: TurtleCommandKind
-  value?: number
-  value2?: number
+  value?: Expression
+  value2?: Expression
   sourceLine?: number
 }
 
