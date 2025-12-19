@@ -1,15 +1,11 @@
 import Editor from '@monaco-editor/react'
 import type { OnMount } from '@monaco-editor/react'
-import PauseIcon from '@mui/icons-material/Pause'
-import PlayArrowIcon from '@mui/icons-material/PlayArrow'
 import HelpOutlineIcon from '@mui/icons-material/HelpOutline'
 import {
   Box,
-  Button,
   Divider,
   IconButton,
   Paper,
-  Slider,
   Stack,
   Typography,
 } from '@mui/material'
@@ -20,11 +16,10 @@ import { executeTurtle } from './turtle/interpreter'
 import { generateOpenScad } from './turtle/openscad'
 import { parseTurtle } from './turtle/parser'
 import { defaultTurtleScript } from './turtle/sample'
-import { clamp } from './helpers/clamp'
-import { drawPreview } from './turtle/drawPreview'
 import { useSettings } from './hooks/useSettings'
 import { HelpDialog } from './components/HelpDialog'
 import { SettingsDialog } from './components/SettingsDialog'
+import { Preview } from './components/Preview'
 import { OpenScadEditor } from './components/OpenScadEditor'
 
 const STORAGE_KEY = 'turtle2openscad:script'
@@ -68,7 +63,6 @@ export default function App() {
     }
   }, [source])
 
-  const canvasRef = useRef<HTMLCanvasElement | null>(null)
   const rafRef = useRef<number | null>(null)
   const lastTsRef = useRef<number | null>(null)
 
@@ -146,34 +140,6 @@ export default function App() {
       lastTsRef.current = null
     }
   }, [isPlaying, activeSegments, speed])
-
-  useEffect(() => {
-    const canvas = canvasRef.current
-    if (!canvas) return
-    const ctx = canvas.getContext('2d')
-    if (!ctx) return
-
-    const dpr = window.devicePixelRatio || 1
-    const rect = canvas.getBoundingClientRect()
-    const nextW = Math.max(1, Math.floor(rect.width * dpr))
-    const nextH = Math.max(1, Math.floor(rect.height * dpr))
-    if (canvas.width !== nextW || canvas.height !== nextH) {
-      canvas.width = nextW
-      canvas.height = nextH
-    }
-
-    drawPreview(
-      ctx,
-      canvas,
-      activeSegments,
-      clamp(progress, 0, activeSegments.length),
-      {
-        penDown: theme.palette.primary.main,
-        penUp: theme.palette.text.secondary,
-        axis: alpha(theme.palette.text.secondary, 0.4),
-      },
-    )
-  }, [progress, activeSegments, theme.palette.primary.main, theme.palette.text.secondary])
 
   useEffect(() => {
     const monaco = monacoRef.current
@@ -305,56 +271,16 @@ export default function App() {
 
         <Divider orientation="vertical" flexItem />
 
-        <Paper variant="outlined" sx={{ flex: 1, minWidth: 0, display: 'flex', flexDirection: 'column' }}>
-          <Box sx={{ px: 2, py: 1 }}>
-            <Stack direction="row" spacing={1} alignItems="center" justifyContent="space-between">
-              <Typography variant="subtitle1">Preview</Typography>
-              <Stack direction="row" spacing={1} alignItems="center">
-                <Button
-                  size="small"
-                  variant="contained"
-                  startIcon={<PlayArrowIcon />}
-                  onClick={handlePlay}
-                  disabled={isPlaying || runResult.segments.length === 0}
-                >
-                  Play
-                </Button>
-                <Button
-                  size="small"
-                  variant="outlined"
-                  startIcon={<PauseIcon />}
-                  onClick={handlePause}
-                  disabled={!isPlaying}
-                >
-                  Pause
-                </Button>
-              </Stack>
-            </Stack>
-          </Box>
-          <Divider />
-          <Box sx={{ px: 2, py: 1 }}>
-            <Stack direction="row" spacing={2} alignItems="center">
-              <Typography variant="body2" color="text.secondary" sx={{ minWidth: 160 }}>
-                Speed (segments/sec)
-              </Typography>
-              <Slider
-                value={speed}
-                min={1}
-                max={20}
-                step={1}
-                onChange={(_, v) => setSpeed(Array.isArray(v) ? v[0] : v)}
-                sx={{ flex: 1 }}
-              />
-              <Typography variant="body2" sx={{ width: 44, textAlign: 'right' }}>
-                {speed}
-              </Typography>
-            </Stack>
-          </Box>
-          <Divider />
-          <Box sx={{ flex: 1, minHeight: 0 }}>
-            <Box component="canvas" ref={canvasRef} sx={{ width: '100%', height: '100%', display: 'block' }} />
-          </Box>
-        </Paper>
+        <Preview
+          isPlaying={isPlaying}
+          speed={speed}
+          progress={progress}
+          activeSegments={activeSegments}
+          hasSegments={runResult.segments.length > 0}
+          onPlay={handlePlay}
+          onPause={handlePause}
+          onSpeedChange={setSpeed}
+        />
 
         <Divider orientation="vertical" flexItem />
         <OpenScadEditor 
