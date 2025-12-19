@@ -5,6 +5,9 @@ import PauseIcon from '@mui/icons-material/Pause'
 import PlayArrowIcon from '@mui/icons-material/PlayArrow'
 import SettingsIcon from '@mui/icons-material/Settings'
 import RestartAltIcon from '@mui/icons-material/RestartAlt'
+import HelpOutlineIcon from '@mui/icons-material/HelpOutline'
+import ReactMarkdown from 'react-markdown'
+import { helpContent } from './helpContent'
 import {
   Box,
   Button,
@@ -49,6 +52,7 @@ export default function App() {
   const [speed, setSpeed] = useState(10)
   const [progress, setProgress] = useState(0)
   const [settingsOpen, setSettingsOpen] = useState(false)
+  const [helpOpen, setHelpOpen] = useState(false)
   const [activeSegments, setActiveSegments] = useState<ReturnType<typeof executeTurtle>['segments']>([])
   const [hasAutoPlayed, setHasAutoPlayed] = useState(false)
 
@@ -232,6 +236,8 @@ export default function App() {
 
   const handleSettingsOpen = () => setSettingsOpen(true)
   const handleSettingsClose = () => setSettingsOpen(false)
+  const handleHelpOpen = () => setHelpOpen(true)
+  const handleHelpClose = () => setHelpOpen(false)
 
   return (
     <Box sx={{ height: '100vh', display: 'flex', flexDirection: 'column' }}>
@@ -247,7 +253,12 @@ export default function App() {
           }}
         >
           <Box sx={{ px: 2, py: 1 }}>
-            <Typography variant="subtitle1">Turtle Script</Typography>
+            <Stack direction="row" alignItems="center" justifyContent="space-between">
+              <Typography variant="subtitle1">Turtle Script</Typography>
+              <IconButton aria-label="Help" onClick={handleHelpOpen} size="small">
+                <HelpOutlineIcon fontSize="small" />
+              </IconButton>
+            </Stack>
           </Box>
           <Divider />
           <Box sx={{ flex: 1, minHeight: 0 }}>
@@ -422,6 +433,47 @@ export default function App() {
         </DialogContent>
         <DialogActions>
           <Button onClick={handleSettingsClose}>Close</Button>
+        </DialogActions>
+      </Dialog>
+
+      <Dialog open={helpOpen} onClose={handleHelpClose} maxWidth="md" fullWidth>
+        <DialogTitle>Help</DialogTitle>
+        <DialogContent>
+          <Box
+            sx={{
+              '& h1': { fontSize: '2rem', mt: 2, mb: 1 },
+              '& h2': { fontSize: '1.5rem', mt: 3, mb: 1, borderBottom: '1px solid', borderColor: 'divider', pb: 0.5 },
+              '& h3': { fontSize: '1.2rem', mt: 2, mb: 1 },
+              '& h4': { fontSize: '1rem', mt: 1.5, mb: 0.5, fontWeight: 600 },
+              '& p': { mb: 1 },
+              '& code': {
+                backgroundColor: alpha(theme.palette.text.primary, 0.05),
+                padding: '2px 6px',
+                borderRadius: '4px',
+                fontSize: '0.875em',
+                fontFamily: 'ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace',
+              },
+              '& pre': {
+                backgroundColor: alpha(theme.palette.text.primary, 0.05),
+                padding: 2,
+                borderRadius: 1,
+                overflow: 'auto',
+                mb: 2,
+              },
+              '& pre code': {
+                backgroundColor: 'transparent',
+                padding: 0,
+              },
+              '& ul, & ol': { pl: 3, mb: 1 },
+              '& li': { mb: 0.5 },
+              '& hr': { my: 2, borderColor: 'divider' },
+            }}
+          >
+            <ReactMarkdown>{helpContent}</ReactMarkdown>
+          </Box>
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={handleHelpClose}>Close</Button>
         </DialogActions>
       </Dialog>
     </Box>
