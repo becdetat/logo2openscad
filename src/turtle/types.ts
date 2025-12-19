@@ -4,6 +4,7 @@ export type Expression =
   | { type: 'binary'; op: '+' | '-' | '*' | '/' | '^'; left: Expression; right: Expression }
   | { type: 'unary'; op: '-'; operand: Expression }
   | { type: 'variable'; name: string }
+  | { type: 'function'; name: string; arg: Expression }
 
 export type TurtleCommandKind = 'FD' | 'BK' | 'LT' | 'RT' | 'PU' | 'PD' | 'ARC' | 'SETX' | 'SETY' | 'SETXY' | 'SETH' | "HOME" | 'MAKE' | 'REPEAT'
 

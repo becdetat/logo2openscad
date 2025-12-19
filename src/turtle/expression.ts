@@ -110,7 +110,7 @@ function parseUnary(state: ParseState): Expression {
   return parseAtom(state)
 }
 
-// Atoms (numbers, variables, and parenthesized expressions)
+// Atoms (numbers, variables, parenthesized expressions, and function calls)
 function parseAtom(state: ParseState): Expression {
   const token = peek(state)
   
@@ -137,6 +137,19 @@ function parseAtom(state: ParseState): Expression {
     return { type: 'variable', name: varName }
   }
   
+  // Check for function call (e.g., SQRT, LN)
+  const upperToken = token.toUpperCase()
+  if (upperToken === 'SQRT') {
+    consume(state)
+    const arg = parseUnary(state)
+    return { type: 'function', name: 'sqrt', arg }
+  }
+  if (upperToken === 'LN') {
+    consume(state)
+    const arg = parseUnary(state)
+    return { type: 'function', name: 'ln', arg }
+  }
+  
   const num = Number(token)
   if (!Number.isFinite(num)) {
     throw new Error(`Invalid number: ${token}`)
@@ -158,6 +171,18 @@ export function evaluateExpression(expr: Expression, variables: VariableContext 
         throw new Error(`Undefined variable: ${expr.name}`)
       }
       return value
+    }
+    
+    case 'function': {
+      const arg = evaluateExpression(expr.arg, variables)
+      switch (expr.name) {
+        case 'sqrt':
+          return Math.sqrt(arg)
+        case 'ln':
+          return Math.log(arg)
+        default:
+          throw new Error(`Unknown function: ${expr.name}`)
+      }
     }
     
     case 'unary':

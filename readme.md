@@ -33,6 +33,7 @@ Only a very small subset of the Berkeley Logo dialect is included, concentrating
 - Note that commands that take more than one argument require a comma between arguments
 - The following binary arithmetic operations are supported: `+`, `-`, `*`, `/`, `^`
 - Unary minus is supported: `FORWARD -10` (equivalent to `BACK 10`)
+- The following function calls can be used within numeric calculations: `SQRT`, `LN` (natural log)
 - Brackets are supported for explicit operator precedence: `LEFT (10+20)*3` (equivalent to `LEFT 90`)
 - Variables can be defined (using `MAKE "variable_name 10` - note the quote mark prefix to indicate the new variable name) and used in arithmetic operations (using a colon prefix like `:variable_name` to reference the variable):
   ```
