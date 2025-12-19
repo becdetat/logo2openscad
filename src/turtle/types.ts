@@ -32,6 +32,7 @@ export type TurtleCommand = {
 export type TurtleComment = {
   text: string
   line: number
+  endLine?: number  // For multi-line comments, tracks where they end
 }
 
 export type Point = { x: number; y: number }
@@ -46,6 +47,7 @@ export type TurtleSegment = {
 export type TurtlePolygon = {
   points: Point[]
   comments: TurtleComment[]
+  commentsByPointIndex: Map<number, TurtleComment[]>  // Comments to appear before each point index
 }
 
 export type ParseResult = {

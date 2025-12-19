@@ -58,12 +58,15 @@ export function parseTurtle(source: string): ParseResult {
   while ((match = multiLineCommentRegex.exec(source)) !== null) {
     const commentText = match[0]
     const startPos = match.index
-    const lineNumber = source.slice(0, startPos).split(/\r?\n/).length
-    comments.push({ text: commentText, line: lineNumber })
-    // Replace multi-line comment with spaces to preserve positions
+    const endPos = startPos + commentText.length
+    const startLine = source.slice(0, startPos).split(/\r?\n/).length
+    const endLine = source.slice(0, endPos).split(/\r?\n/).length
+    comments.push({ text: commentText, line: startLine, endLine })
+    // Replace multi-line comment with spaces, preserving newlines
+    const replacement = commentText.replace(/[^\r\n]/g, ' ')
     processedSource =
       processedSource.slice(0, startPos) +
-      ' '.repeat(commentText.length) +
+      replacement +
       processedSource.slice(startPos + commentText.length)
   }
 

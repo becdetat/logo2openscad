@@ -31,14 +31,21 @@ export function executeTurtle(
 
   let currentPolygon: Point[] | null = [{ x, y }]
   let currentPolygonComments: TurtleComment[] = []
+  let currentPolygonCommentsByPointIndex: Map<number, TurtleComment[]> = new Map()
   let polygonStartLine = 1
+  let usedCommentIndices: Set<number> = new Set()
 
   const finalizePolygon = () => {
     if (!currentPolygon) return
     if (currentPolygon.length === 0) currentPolygon.push({ x, y })
-    polygons.push({ points: currentPolygon, comments: currentPolygonComments })
+    polygons.push({ 
+      points: currentPolygon, 
+      comments: currentPolygonComments,
+      commentsByPointIndex: currentPolygonCommentsByPointIndex
+    })
     currentPolygon = null
     currentPolygonComments = []
+    currentPolygonCommentsByPointIndex = new Map()
   }
 
   const ensurePolygonStarted = () => {
@@ -47,8 +54,41 @@ export function executeTurtle(
   }
 
   const collectCommentsSince = (fromLine: number, toLine: number) => {
-    const commentsInRange = allComments.filter((c) => c.line >= fromLine && c.line <= toLine)
-    currentPolygonComments.push(...commentsInRange)
+    const collected: TurtleComment[] = []
+    for (let i = 0; i < allComments.length; i++) {
+      if (usedCommentIndices.has(i)) continue
+      const c = allComments[i]
+      const commentEndLine = c.endLine ?? c.line
+      // Include comment if it overlaps with the range [fromLine, toLine]
+      if (commentEndLine >= fromLine && c.line <= toLine) {
+        collected.push(c)
+        usedCommentIndices.add(i)
+      }
+    }
+    // Sort by line number to maintain source order
+    collected.sort((a, b) => a.line - b.line)
+    currentPolygonComments.push(...collected)
+  }
+
+  const collectCommentsBeforeNextPoint = (fromLine: number, toLine: number) => {
+    const commentsForThisPoint: TurtleComment[] = []
+    for (let i = 0; i < allComments.length; i++) {
+      if (usedCommentIndices.has(i)) continue
+      const c = allComments[i]
+      const commentEndLine = c.endLine ?? c.line
+      // Include comment if it overlaps with the range [fromLine, toLine]
+      if (commentEndLine >= fromLine && c.line <= toLine) {
+        commentsForThisPoint.push(c)
+        usedCommentIndices.add(i)
+      }
+    }
+    // Sort by line number to maintain source order
+    commentsForThisPoint.sort((a, b) => a.line - b.line)
+    if (commentsForThisPoint.length > 0 && currentPolygon) {
+      const nextPointIndex = currentPolygon.length
+      const existing = currentPolygonCommentsByPointIndex.get(nextPointIndex) || []
+      currentPolygonCommentsByPointIndex.set(nextPointIndex, [...existing, ...commentsForThisPoint])
+    }
   }
 
   const executeCommands = (cmdList: TurtleCommand[]) => {
@@ -62,8 +102,14 @@ export function executeTurtle(
 
     // Collect comments up to this command line
     if (penDown && cmdLine > polygonStartLine) {
-      collectCommentsSince(polygonStartLine, cmdLine)
-      polygonStartLine = cmdLine + 1
+      // Check if this command will add a point
+      const willAddPoint = ['FD', 'BK', 'SETX', 'SETY', 'SETXY', 'ARC', 'HOME'].includes(cmd.kind)
+      if (willAddPoint) {
+        collectCommentsBeforeNextPoint(polygonStartLine, cmdLine - 1)
+      } else {
+        collectCommentsSince(polygonStartLine, cmdLine - 1)
+      }
+      polygonStartLine = cmdLine
     }
 
     switch (cmd.kind) {
@@ -98,6 +144,8 @@ export function executeTurtle(
           polygonStartLine = cmdLine + 1
           penDown = true
           currentPolygon = [{ x, y }]
+          currentPolygonCommentsByPointIndex = new Map()
+          usedCommentIndices = new Set()
         }
         break
       case 'SETX': {

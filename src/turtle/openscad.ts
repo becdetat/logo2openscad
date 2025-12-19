@@ -22,13 +22,21 @@ export function generateOpenScad(polygons: TurtlePolygon[]): string {
 
     const lines: string[] = []
     
-    // Output comments associated with this polygon
+    // Output comments that aren't associated with specific points
     for (const comment of poly.comments) {
       lines.push(comment.text)
     }
     
     lines.push('polygon(points=[')
     for (let i = 0; i < pts.length; i++) {
+      // Insert comments before this point
+      const commentsForThisPoint = poly.commentsByPointIndex.get(i)
+      if (commentsForThisPoint) {
+        for (const comment of commentsForThisPoint) {
+          lines.push(comment.text)
+        }
+      }
+      
       const p = pts[i]
       const comma = i === pts.length - 1 ? '' : ','
       lines.push(`  [${formatNum(p.x)}, ${formatNum(p.y)}]${comma}`)
