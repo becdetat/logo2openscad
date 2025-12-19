@@ -1,17 +1,7 @@
-import Editor from '@monaco-editor/react'
-import type { OnMount } from '@monaco-editor/react'
-import HelpOutlineIcon from '@mui/icons-material/HelpOutline'
-import {
-  Box,
-  Divider,
-  IconButton,
-  Paper,
-  Stack,
-  Typography,
-} from '@mui/material'
-import { alpha, useTheme } from '@mui/material/styles'
 import { useEffect, useMemo, useRef, useState } from 'react'
 import type * as Monaco from 'monaco-editor'
+import type { OnMount } from '@monaco-editor/react'
+import { Box, Divider } from '@mui/material'
 import { executeTurtle } from './turtle/interpreter'
 import { generateOpenScad } from './turtle/openscad'
 import { parseTurtle } from './turtle/parser'
@@ -21,11 +11,11 @@ import { HelpDialog } from './components/HelpDialog'
 import { SettingsDialog } from './components/SettingsDialog'
 import { Preview } from './components/Preview'
 import { OpenScadEditor } from './components/OpenScadEditor'
+import { LogoEditor } from './components/LogoEditor'
 
 const STORAGE_KEY = 'turtle2openscad:script'
 
 export default function App() {
-  const theme = useTheme()
   const { settings, reloadSettings } = useSettings()
   const [source, setSource] = useState(() => {
     try {
@@ -208,66 +198,13 @@ export default function App() {
   return (
     <Box sx={{ height: '100vh', display: 'flex', flexDirection: 'column' }}>
       <Box sx={{ flex: 1, minHeight: 0, display: 'flex' }}>
-        <Paper
-          variant="outlined"
-          sx={{
-            flex: 1,
-            minWidth: 0,
-            display: 'flex',
-            flexDirection: 'column',
-            ['--t2os-error-line-bg' as any]: alpha(theme.palette.error.main, 0.12),
-          }}
-        >
-          <Box sx={{ px: 2, py: 1 }}>
-            <Stack direction="row" alignItems="center" justifyContent="space-between">
-              <Typography variant="subtitle1">Turtle Script</Typography>
-              <IconButton aria-label="Help" onClick={handleHelpOpen} size="small">
-                <HelpOutlineIcon fontSize="small" />
-              </IconButton>
-            </Stack>
-          </Box>
-          <Divider />
-          <Box sx={{ flex: 1, minHeight: 0 }}>
-            <Editor
-              height="100%"
-              defaultLanguage="plaintext"
-              value={source}
-              onChange={(v) => setSource(v ?? '')}
-              onMount={onEditorMount}
-              options={{
-                minimap: { enabled: false },
-                fontSize: 13,
-                scrollBeyondLastLine: false,
-              }}
-            />
-          </Box>
-          <Divider />
-          <Box sx={{ px: 2, py: 1, maxHeight: 140, overflow: 'auto' }}>
-            <Stack
-              direction="row"
-              spacing={1}
-              alignItems="center"
-              justifyContent="space-between"
-            >
-              {parseResult.diagnostics.length === 0 ? (
-                <Typography variant="body2" color="text.secondary">
-                  No errors
-                </Typography>
-              ) : (
-                <Stack spacing={0.5}>
-                  {parseResult.diagnostics.slice(0, 50).map((d, idx) => (
-                    <Typography key={idx} variant="body2" color="error">
-                      L{d.range.startLine}: {d.message}
-                    </Typography>
-                  ))}
-                </Stack>
-              )}
-              <Typography variant="body2" color="text.secondary">
-                <a href="https://github.com/becdetat/turtle2openscad" target="_blank" rel="noopener noreferrer">Github</a> | <a href="https://becdetat.com" target="_blank" rel="noopener noreferrer">Made with AI by Rebecca Scott</a>
-              </Typography>
-            </Stack>
-          </Box>
-        </Paper>
+        <LogoEditor
+          source={source}
+          parseResult={parseResult}
+          onSourceChange={setSource}
+          onEditorMount={onEditorMount}
+          onHelpOpen={handleHelpOpen}
+        />
 
         <Divider orientation="vertical" flexItem />
 
