@@ -137,7 +137,7 @@ function parseAtom(state: ParseState): Expression {
     return { type: 'variable', name: varName }
   }
   
-  // Check for function call (e.g., SQRT, LN)
+  // Check for function call (e.g., SQRT, LN, EXP)
   const upperToken = token.toUpperCase()
   if (upperToken === 'SQRT') {
     consume(state)
@@ -148,6 +148,11 @@ function parseAtom(state: ParseState): Expression {
     consume(state)
     const arg = parseUnary(state)
     return { type: 'function', name: 'ln', arg }
+  }
+  if (upperToken === 'EXP') {
+    consume(state)
+    const arg = parseUnary(state)
+    return { type: 'function', name: 'exp', arg }
   }
   
   const num = Number(token)
@@ -180,6 +185,8 @@ export function evaluateExpression(expr: Expression, variables: VariableContext 
           return Math.sqrt(arg)
         case 'ln':
           return Math.log(arg)
+        case 'exp':
+          return Math.exp(arg)
         default:
           throw new Error(`Unknown function: ${expr.name}`)
       }
