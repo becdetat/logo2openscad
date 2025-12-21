@@ -43,6 +43,7 @@ export function LogoEditor(props: LogoEditorProps) {
                     value={props.source}
                     onChange={(v) => props.onSourceChange(v ?? '')}
                     onMount={props.onEditorMount}
+                    theme={theme.palette.mode === 'dark' ? 'vs-dark' : 'vs-light'}
                     options={{
                         minimap: { enabled: false },
                         fontSize: 13,

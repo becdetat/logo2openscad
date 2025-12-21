@@ -15,7 +15,12 @@ import { LogoEditor } from './components/LogoEditor'
 
 const STORAGE_KEY = 'turtle2openscad:script'
 
-export default function App() {
+export type AppProps = {
+  toggleDarkMode: () => void
+  isDarkMode: boolean
+}
+
+export default function App(props: AppProps) {
   const { settings, reloadSettings } = useSettings()
   const [source, setSource] = useState(() => {
     try {
@@ -223,6 +228,8 @@ export default function App() {
         <OpenScadEditor 
           openScad={openScad} 
           handleSettingsOpen={handleSettingsOpen}
+          toggleDarkMode={props.toggleDarkMode}
+          isDarkMode={props.isDarkMode}
         />
       </Box>
 

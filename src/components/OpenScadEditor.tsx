@@ -1,11 +1,15 @@
 import { Box, Divider, IconButton, Paper, Stack, Typography, useTheme } from "@mui/material";
 import ContentCopyIcon from '@mui/icons-material/ContentCopy'
 import SettingsIcon from '@mui/icons-material/Settings'
+import Brightness4Icon from '@mui/icons-material/Brightness4'
+import Brightness7Icon from '@mui/icons-material/Brightness7'
 import { Editor } from "@monaco-editor/react";
 
 export type OpenScadEditorProps = {
     openScad: string;
     handleSettingsOpen: () => void;
+    toggleDarkMode: () => void;
+    isDarkMode: boolean;
 }
 
 export function OpenScadEditor(props: OpenScadEditorProps) {
@@ -25,6 +29,9 @@ export function OpenScadEditor(props: OpenScadEditorProps) {
                 <Stack direction="row" alignItems="center" justifyContent="space-between">
                     <Typography variant="subtitle1">OpenSCAD</Typography>
                     <Stack direction="row" spacing={1}>
+                        <IconButton aria-label="Toggle dark mode" onClick={props.toggleDarkMode} size="small">
+                            {props.isDarkMode ? <Brightness7Icon fontSize="small" /> : <Brightness4Icon fontSize="small" />}
+                        </IconButton>
                         <IconButton aria-label="Settings" onClick={props.handleSettingsOpen} size="small">
                             <SettingsIcon fontSize="small" />
                         </IconButton>
