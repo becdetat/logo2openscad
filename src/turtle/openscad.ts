@@ -1,8 +1,5 @@
 import type { Point, TurtlePolygon } from './types'
-
-function formatNum(n: number) {
-  return Number(n.toFixed(6)).toString()
-}
+import { formatNum } from './utils'
 
 function pointsEqual(a: Point, b: Point) {
   return a.x === b.x && a.y === b.y

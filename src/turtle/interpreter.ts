@@ -9,13 +9,10 @@ import type {
 } from './types'
 import { evaluateExpression, type VariableContext } from './expression'
 import { parseTurtle } from './parser'
+import { formatNum } from './utils'
 
 function degToRad(deg: number) {
   return (deg * Math.PI) / 180
-}
-
-function formatNum(n: number) {
-  return Number(n.toFixed(6)).toString()
 }
 
 export function executeTurtle(

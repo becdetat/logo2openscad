@@ -280,5 +280,13 @@ describe('parser', () => {
       expect(result.commands[0].comment).toBe('Position at: corner 1, layer 2')
       expect(result.diagnostics).toHaveLength(0)
     })
+
+    it('should parse EXTCOMMENTPOS with nested brackets in comment', () => {
+      const result = parseTurtle('EXTCOMMENTPOS [Position [corner]]')
+      expect(result.commands).toHaveLength(1)
+      expect(result.commands[0].kind).toBe('EXTCOMMENTPOS')
+      expect(result.commands[0].comment).toBe('Position [corner]')
+      expect(result.diagnostics).toHaveLength(0)
+    })
   })
 })

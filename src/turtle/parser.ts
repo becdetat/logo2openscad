@@ -225,7 +225,20 @@ export function parseTurtle(source: string): ParseResult {
             // No comment parameter provided
             commands.push({ kind, sourceLine: lineNumber })
           } else if (argsText.startsWith('[')) {
-            const bracketEnd = argsText.lastIndexOf(']')
+            // Find matching closing bracket
+            let bracketDepth = 0
+            let bracketEnd = -1
+            for (let i = 0; i < argsText.length; i++) {
+              if (argsText[i] === '[') bracketDepth++
+              else if (argsText[i] === ']') {
+                bracketDepth--
+                if (bracketDepth === 0) {
+                  bracketEnd = i
+                  break
+                }
+              }
+            }
+            
             if (bracketEnd === -1) {
               diagnostics.push(diagnostic('EXTCOMMENTPOS comment missing closing bracket ]', segRange))
             } else {
