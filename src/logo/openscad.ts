@@ -10,19 +10,25 @@ export function generateOpenScad(polygons: LogoPolygon[]): string {
 
   const blocks: string[] = []
   for (const poly of polygons) {
-    const pts = [...poly.points]
-    if (pts.length === 0) pts.push({ x: 0, y: 0 })
-
-    const first = pts[0]
-    const last = pts[pts.length - 1]
-    if (!pointsEqual(first, last)) pts.push({ ...first })
-
     const lines: string[] = []
     
     // Output comments that aren't associated with specific points
     for (const comment of poly.comments) {
       lines.push(comment.text)
     }
+    
+    // If this is a comment-only polygon, skip the geometry
+    if (poly.commentOnly) {
+      blocks.push(lines.join('\n'))
+      continue
+    }
+    
+    const pts = [...poly.points]
+    if (pts.length === 0) pts.push({ x: 0, y: 0 })
+
+    const first = pts[0]
+    const last = pts[pts.length - 1]
+    if (!pointsEqual(first, last)) pts.push({ ...first })
     
     lines.push('polygon(points=[')
     for (let i = 0; i < pts.length; i++) {

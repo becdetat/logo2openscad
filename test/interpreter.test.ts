@@ -414,6 +414,18 @@ describe('interpreter', () => {
       expect(allComments.some(c => c.includes('222'))).toBe(true)
       expect(allComments.some(c => c.includes('333'))).toBe(true)
     })
+
+    it('should mark pen-up polygons as commentOnly', () => {
+      const { commands, comments } = parseLogo('PU\nEXTCOMMENTPOS [Test comment]')
+      const result = executeLogo(commands, defaultOptions, comments)
+      
+      // Should have at least one polygon (possibly more from PU/PD transitions)
+      expect(result.polygons.length).toBeGreaterThanOrEqual(1)
+      // Find the comment-only polygon
+      const commentOnlyPolygon = result.polygons.find(p => p.commentOnly === true)
+      expect(commentOnlyPolygon).toBeDefined()
+      expect(commentOnlyPolygon!.comments.some(c => c.text.includes('Test comment'))).toBe(true)
+    })
   })
 
   describe('PRINT command', () => {

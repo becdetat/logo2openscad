@@ -355,5 +355,49 @@ describe('openscad', () => {
       const secondPointIndex = result.indexOf('[7.071068, 7.071068]')
       expect(commentIndex).toBeLessThan(secondPointIndex)
     })
+
+    it('should output comment-only polygon without geometry', () => {
+      const polygons: LogoPolygon[] = [
+        {
+          points: [{ x: 0, y: 0 }],
+          comments: [{ text: '// Test comment', line: 1 }],
+          commentsByPointIndex: new Map(),
+          commentOnly: true,
+        },
+      ]
+
+      const result = generateOpenScad(polygons)
+
+      // Should contain the comment
+      expect(result).toContain('// Test comment')
+      // Should NOT contain polygon geometry
+      expect(result).not.toContain('polygon(')
+      expect(result).not.toContain('[0, 0]')
+    })
+
+    it('should output multiple comment-only polygons correctly', () => {
+      const polygons: LogoPolygon[] = [
+        {
+          points: [{ x: 10, y: 20 }],
+          comments: [{ text: '// Comment 1', line: 1 }],
+          commentsByPointIndex: new Map(),
+          commentOnly: true,
+        },
+        {
+          points: [{ x: 30, y: 40 }],
+          comments: [{ text: '// Comment 2', line: 2 }],
+          commentsByPointIndex: new Map(),
+          commentOnly: true,
+        },
+      ]
+
+      const result = generateOpenScad(polygons)
+
+      // Should contain both comments
+      expect(result).toContain('// Comment 1')
+      expect(result).toContain('// Comment 2')
+      // Should NOT contain polygon geometry
+      expect(result).not.toContain('polygon(')
+    })
   })
 })

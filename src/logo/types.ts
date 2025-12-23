@@ -54,6 +54,7 @@ export type LogoPolygon = {
   points: Point[]
   comments: LogoComment[]
   commentsByPointIndex: Map<number, LogoComment[]>  // Comments to appear before each point index
+  commentOnly?: boolean  // If true, only output comments without geometry
 }
 
 export type ParseResult = {

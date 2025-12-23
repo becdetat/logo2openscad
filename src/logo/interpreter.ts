@@ -36,14 +36,15 @@ export function executeLogo(
   let polygonStartLine = 1
   let usedCommentIndices: Set<number> = new Set()
 
-  const finalizePolygon = () => {
+  const finalizePolygon = (commentOnly = false) => {
     if (!currentPolygon) return
     if (currentPolygon.length === 0) currentPolygon.push({ x, y })
     
     polygons.push({ 
       points: currentPolygon, 
       comments: currentPolygonComments,
-      commentsByPointIndex: currentPolygonCommentsByPointIndex
+      commentsByPointIndex: currentPolygonCommentsByPointIndex,
+      commentOnly
     })
     currentPolygon = null
     currentPolygonComments = []
@@ -262,11 +263,10 @@ export function executeLogo(
           const existing = currentPolygonCommentsByPointIndex.get(targetIndex) || []
           currentPolygonCommentsByPointIndex.set(targetIndex, [...existing, positionComment])
         } else {
-          // When pen is up, create a comment-only polygon to ensure the comment is output
-          // This will create a single-point polygon at the current position that serves
-          // only as a container for the comment in the OpenSCAD output
+          // When pen is up, create a comment-only polygon (no geometry will be output)
           ensurePolygonStarted()
           currentPolygonComments.push(positionComment)
+          finalizePolygon(true)  // Mark as comment-only
         }
         break
       }
@@ -297,9 +297,10 @@ export function executeLogo(
           const existing = currentPolygonCommentsByPointIndex.get(targetIndex) || []
           currentPolygonCommentsByPointIndex.set(targetIndex, [...existing, printComment])
         } else {
-          // When pen is up, add to polygon-level comments
+          // When pen is up, add to comment-only polygon
           ensurePolygonStarted()
           currentPolygonComments.push(printComment)
+          finalizePolygon(true)  // Mark as comment-only
         }
         break
       }
