@@ -54,29 +54,19 @@ export function LogoEditor(props: LogoEditorProps) {
             </Box>
             <Divider />
             <Box sx={{ px: 2, py: 1, maxHeight: 140, overflow: 'auto' }}>
-                <Stack
-                    direction="row"
-                    spacing={1}
-                    alignItems="center"
-                    justifyContent="space-between"
-                >
-                    {props.parseResult.diagnostics.length === 0 ? (
-                        <Typography variant="body2" color="text.secondary">
-                            No errors
-                        </Typography>
-                    ) : (
-                        <Stack spacing={0.5}>
-                            {props.parseResult.diagnostics.slice(0, 50).map((d, idx) => (
-                                <Typography key={idx} variant="body2" color="error">
-                                    L{d.range.startLine}: {d.message}
-                                </Typography>
-                            ))}
-                        </Stack>
-                    )}
+                {props.parseResult.diagnostics.length === 0 ? (
                     <Typography variant="body2" color="text.secondary">
-                        <a href="https://github.com/becdetat/turtle2openscad" target="_blank" rel="noopener noreferrer">Github</a> | <a href="https://becdetat.com" target="_blank" rel="noopener noreferrer">Made with AI by Rebecca Scott</a>
+                        No errors
                     </Typography>
-                </Stack>
+                ) : (
+                    <Stack spacing={0.5}>
+                        {props.parseResult.diagnostics.slice(0, 50).map((d, idx) => (
+                            <Typography key={idx} variant="body2" color="error">
+                                L{d.range.startLine}: {d.message}
+                            </Typography>
+                        ))}
+                    </Stack>
+                )}
             </Box>
         </Paper>
     );

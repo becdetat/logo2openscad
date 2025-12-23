@@ -60,6 +60,12 @@ export function OpenScadEditor(props: OpenScadEditorProps) {
                     }}
                 />
             </Box>
+            <Divider />
+            <Box sx={{ px: 2, py: 1, textAlign: 'center' }}>
+                <Typography variant="body2" color="text.secondary">
+                    <a href="https://github.com/becdetat/turtle2openscad" target="_blank" rel="noopener noreferrer">GitHub</a> | <a href="https://becdetat.com" target="_blank" rel="noopener noreferrer">Made with AI by Rebecca Scott</a> | {__APP_VERSION__}
+                </Typography>
+            </Box>
         </Paper>
     );
 }
