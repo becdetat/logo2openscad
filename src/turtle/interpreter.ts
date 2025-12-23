@@ -262,8 +262,9 @@ export function executeTurtle(
           const existing = currentPolygonCommentsByPointIndex.get(targetIndex) || []
           currentPolygonCommentsByPointIndex.set(targetIndex, [...existing, positionComment])
         } else {
-          // When pen is up, create a comment-only polygon
-          // This ensures comments are output even when not drawing geometry
+          // When pen is up, create a comment-only polygon to ensure the comment is output
+          // This will create a single-point polygon at the current position that serves
+          // only as a container for the comment in the OpenSCAD output
           ensurePolygonStarted()
           currentPolygonComments.push(positionComment)
         }
