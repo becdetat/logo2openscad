@@ -6,6 +6,7 @@ import { alpha, useTheme } from "@mui/material/styles";
 import type { ParseResult } from "../logo/types";
 
 export type LogoEditorProps = {
+    scriptName: string;
     source: string;
     parseResult: ParseResult;
     onSourceChange: (source: string) => void;
@@ -29,7 +30,7 @@ export function LogoEditor(props: LogoEditorProps) {
         >
             <Box sx={{ px: 2, py: 1 }}>
                 <Stack direction="row" alignItems="center" justifyContent="space-between">
-                    <Typography variant="subtitle1">Logo</Typography>
+                    <Typography variant="subtitle1">{props.scriptName} - Logo</Typography>
                     <small><kbd>Ctrl</kbd>+<kbd>Enter</kbd> to preview</small>
                     <IconButton aria-label="Help" onClick={props.onHelpOpen} size="small">
                         <HelpOutlineIcon fontSize="small" />

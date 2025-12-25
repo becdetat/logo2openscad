@@ -5,15 +5,18 @@ import { Box, Divider } from '@mui/material'
 import { executeLogo } from './logo/interpreter'
 import { generateOpenScad } from './logo/openscad'
 import { parseLogo } from './logo/parser'
-import { defaultLogoScript } from './logo/sample'
 import { useSettings } from './hooks/useSettings'
+import { useWorkspace } from './hooks/useWorkspace'
+import { useSidebarCollapsed } from './hooks/useSidebarCollapsed'
 import { HelpDialog } from './components/HelpDialog'
 import { SettingsDialog } from './components/SettingsDialog'
+import { ScriptDialog } from './components/ScriptDialog'
+import { DeleteScriptDialog } from './components/DeleteScriptDialog'
+import { ErrorSnackbar } from './components/ErrorSnackbar'
+import { WorkspaceSidebar } from './components/WorkspaceSidebar'
 import { Preview } from './components/Preview'
 import { OpenScadEditor } from './components/OpenScadEditor'
 import { LogoEditor } from './components/LogoEditor'
-
-const STORAGE_KEY = 'turtle2openscad:script'
 
 export type AppProps = {
   toggleDarkMode: () => void
@@ -22,14 +25,9 @@ export type AppProps = {
 
 export default function App(props: AppProps) {
   const { settings, reloadSettings } = useSettings()
-  const [source, setSource] = useState(() => {
-    try {
-      const saved = localStorage.getItem(STORAGE_KEY)
-      return saved ?? defaultLogoScript
-    } catch {
-      return defaultLogoScript
-    }
-  })
+  const { workspace, activeScript, error: workspaceError, createScript, deleteScript, renameScript, selectScript, updateScriptContent } = useWorkspace()
+  const { collapsed, toggle: toggleSidebar } = useSidebarCollapsed()
+  
   const [isPlaying, setIsPlaying] = useState(false)
   const [speed, setSpeed] = useState(10)
   const [progress, setProgress] = useState(0)
@@ -37,6 +35,15 @@ export default function App(props: AppProps) {
   const [helpOpen, setHelpOpen] = useState(false)
   const [activeSegments, setActiveSegments] = useState<ReturnType<typeof executeLogo>['segments']>([])
   const [hasAutoPlayed, setHasAutoPlayed] = useState(false)
+  
+  // Dialog state
+  const [createDialogOpen, setCreateDialogOpen] = useState(false)
+  const [renameDialogOpen, setRenameDialogOpen] = useState(false)
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false)
+  const [scriptToRename, setScriptToRename] = useState<string | null>(null)
+  const [scriptToDelete, setScriptToDelete] = useState<string | null>(null)
+  
+  const source = activeScript.content
 
   const parseResult = useMemo(() => parseLogo(source), [source])
   const runResult = useMemo(() => {
@@ -59,14 +66,10 @@ export default function App(props: AppProps) {
     runResultRef.current = runResult
   }, [runResult])
 
-  // Save source to localStorage whenever it changes
+  // Update document title with script name
   useEffect(() => {
-    try {
-      localStorage.setItem(STORAGE_KEY, source)
-    } catch {
-      // ignore
-    }
-  }, [source])
+    document.title = `${activeScript.name} - Logo2OpenSCAD`
+  }, [activeScript.name])
 
   const rafRef = useRef<number | null>(null)
   const lastTsRef = useRef<number | null>(null)
@@ -89,7 +92,7 @@ export default function App(props: AppProps) {
 
   useEffect(() => {
     setIsPlaying(false)
-  }, [source])
+  }, [activeScript.id])
 
   // Auto-play when runResult first has segments
   useEffect(() => {
@@ -209,14 +212,61 @@ export default function App(props: AppProps) {
   
   const handleHelpOpen = () => setHelpOpen(true)
   const handleHelpClose = () => setHelpOpen(false)
+  
+  // Workspace handlers
+  const handleSourceChange = (newSource: string) => {
+    updateScriptContent(activeScript.id, newSource)
+  }
+  
+  const handleCreateScript = () => {
+    setCreateDialogOpen(true)
+  }
+  
+  const handleCreateConfirm = (name: string) => {
+    createScript(name)
+  }
+  
+  const handleRenameScript = (scriptId: string) => {
+    setScriptToRename(scriptId)
+    setRenameDialogOpen(true)
+  }
+  
+  const handleRenameConfirm = (newName: string) => {
+    if (scriptToRename) {
+      renameScript(scriptToRename, newName)
+    }
+  }
+  
+  const handleDeleteScript = (scriptId: string) => {
+    setScriptToDelete(scriptId)
+    setDeleteDialogOpen(true)
+  }
+  
+  const handleDeleteConfirm = () => {
+    if (scriptToDelete) {
+      deleteScript(scriptToDelete)
+    }
+  }
 
   return (
     <Box sx={{ height: '100vh', display: 'flex', flexDirection: 'column' }}>
+      <WorkspaceSidebar
+        collapsed={collapsed}
+        onToggleCollapse={toggleSidebar}
+        scripts={workspace.scripts}
+        activeScriptId={workspace.activeScriptId}
+        onSelectScript={selectScript}
+        onCreateScript={handleCreateScript}
+        onRenameScript={handleRenameScript}
+        onDeleteScript={handleDeleteScript}
+      />
+      
       <Box sx={{ flex: 1, minHeight: 0, display: 'flex' }}>
         <LogoEditor
+          scriptName={activeScript.name}
           source={source}
           parseResult={parseResult}
-          onSourceChange={setSource}
+          onSourceChange={handleSourceChange}
           onEditorMount={onEditorMount}
           onHelpOpen={handleHelpOpen}
         />
@@ -245,6 +295,39 @@ export default function App(props: AppProps) {
 
       <SettingsDialog open={settingsOpen} onClose={handleSettingsClose} />
       <HelpDialog open={helpOpen} onClose={handleHelpClose} />
+      
+      <ScriptDialog
+        open={createDialogOpen}
+        title="Create New Script"
+        onClose={() => setCreateDialogOpen(false)}
+        onConfirm={handleCreateConfirm}
+      />
+      
+      <ScriptDialog
+        open={renameDialogOpen}
+        title="Rename Script"
+        initialValue={scriptToRename ? workspace.scripts.find(s => s.id === scriptToRename)?.name : ''}
+        onClose={() => {
+          setRenameDialogOpen(false)
+          setScriptToRename(null)
+        }}
+        onConfirm={handleRenameConfirm}
+      />
+      
+      <DeleteScriptDialog
+        open={deleteDialogOpen}
+        scriptName={scriptToDelete ? workspace.scripts.find(s => s.id === scriptToDelete)?.name ?? '' : ''}
+        onClose={() => {
+          setDeleteDialogOpen(false)
+          setScriptToDelete(null)
+        }}
+        onConfirm={handleDeleteConfirm}
+      />
+      
+      <ErrorSnackbar
+        message={workspaceError}
+        onClose={() => {}}
+      />
     </Box>
   )
 }

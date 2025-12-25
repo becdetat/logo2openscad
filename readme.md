@@ -4,10 +4,14 @@ Client-side web app that converts a small Logo "turtle" script into OpenSCAD `po
 
 ## Features
 
-- 3 panes: Logo script editor (Monaco), animated preview (Play/Pause), generated OpenSCAD output (read-only) with Copy button
-- Turtle defaults: origin `(0, 0)`, heading up, degrees, pen down
-- Supports multiple polygons via `PU`/`PD`
-- Pen-up travel is shown dashed in the preview
+- **Workspace Management**: Create, rename, and delete multiple Logo scripts within a single workspace
+  - Collapsible sidebar for easy script navigation
+  - Auto-save on every change
+  - Automatic migration from older single-script format
+- **3 Panes**: Logo script editor (Monaco), animated preview (Play/Pause), generated OpenSCAD output (read-only) with Copy button
+- **Turtle Defaults**: origin `(0, 0)`, heading up, degrees, pen down
+- **Multiple Polygons**: Supports via `PU`/`PD`
+- **Preview**: Pen-up travel is shown dashed in the preview
 
 ## Logo language
 
@@ -81,6 +85,17 @@ See [Issues](https://github.com/becdetat/logo2openscad/issues) for more commands
 
 ## Local development
 
+### Workspace Storage
+
+The app stores all scripts in browser localStorage under the key `logo2openscad:workspace`. Each workspace contains:
+- Multiple scripts with unique names
+- Script content and metadata (created/updated timestamps)
+- Active script selection
+
+The app automatically migrates from the older single-script format (`turtle2openscad:script`) on first load.
+
+### Development Server
+
 ```pwsh
 npm install
 npm run dev
@@ -88,12 +103,14 @@ npm run dev
 
 ## Testing
 
-The project uses Vitest for unit testing. Tests cover the core Logo graphics modules:
+The project uses Vitest for unit testing. Tests cover the core Logo graphics modules and workspace management:
 
 - **parser.test.ts** - Tests the Logo script parser for commands, comments, expressions, variables, and REPEAT loops
 - **interpreter.test.ts** - Tests the Logo interpreter for movement, turning, polygons, arcs, and state management
 - **openscad.test.ts** - Tests OpenSCAD code generation including polygon output, comments, and number formatting
 - **drawPreview.test.ts** - Tests canvas preview rendering including segment drawing, viewport scaling, and animation
+- **useWorkspace.test.ts** - Tests workspace management including CRUD operations, validation, and migration
+- **dialogs.test.tsx** - Tests UI dialogs for script creation, renaming, and deletion
 
 Run tests:
 

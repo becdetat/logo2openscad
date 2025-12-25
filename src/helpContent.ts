@@ -4,6 +4,20 @@ export const helpContent = `# Logo2OpenSCAD Help
 
 Logo2OpenSCAD is a client-side web app that converts Logo scripts into OpenSCAD \`polygon(points=[...])\` output.
 
+## Workspace
+
+### Managing Scripts
+
+The app supports multiple Logo scripts in a workspace:
+
+- **Create**: Click the "New Script" button in the sidebar
+- **Switch**: Click on any script in the sidebar to open it
+- **Rename**: Right-click a script (or click the ⋮ button) and select "Rename"
+- **Delete**: Right-click a script (or click the ⋮ button) and select "Delete"
+- **Sidebar**: Click the chevron icons to collapse/expand the sidebar
+
+All changes are automatically saved to your browser's local storage.
+
 ### Coordinate System
 - **Origin**: (0, 0)
 - **Initial heading**: Up (0°)

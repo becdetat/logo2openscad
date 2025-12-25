@@ -221,6 +221,9 @@ On first load, check for legacy data:
 - Consider adding analytics to track workspace usage
 - Keep legacy key cleanup code for at least one version cycle
 
-
+## To do
+- [ ] Run preview when changing scripts
+- [ ] The workspace sidebar should work like a modal with an overlay on the rest of the application so it's obvious - at the moment it isn't obvious that you need to collapse the workspace sidebar to work in the application. When selecting a script it should collapse the sidebar.
+- [ ] Default new script name should be "UntitledX" when creating a new script.
 
 
