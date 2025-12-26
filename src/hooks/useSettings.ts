@@ -1,10 +1,11 @@
 import { useCallback, useEffect, useState } from 'react'
 
 export type Settings = {
-  // Settings can be added here in the future
+  hidePenUp: boolean
 }
 
 const DEFAULTS: Settings = {
+  hidePenUp: false,
 }
 
 const STORAGE_KEY = 'logo2openscad:settings'
@@ -15,8 +16,7 @@ function loadSettings(): Settings {
     if (!raw) return { ...DEFAULTS }
     const parsed = JSON.parse(raw)
     return {
-      // Spread parsed settings when we have them
-      ...parsed,
+      hidePenUp: typeof parsed.hidePenUp === 'boolean' ? parsed.hidePenUp : DEFAULTS.hidePenUp,
     }
   } catch {
     return { ...DEFAULTS }

@@ -1,7 +1,8 @@
-import { Box, Button, Divider, Paper, Slider, Stack, Typography } from "@mui/material";
+import { Box, Button, Checkbox, Divider, FormControlLabel, Paper, Slider, Stack, Typography } from "@mui/material";
 import PauseIcon from '@mui/icons-material/Pause'
 import PlayArrowIcon from '@mui/icons-material/PlayArrow'
 import { useEffect, useRef } from "react";
+import { useSettings } from "../hooks/useSettings";
 import type { LogoSegment } from "../logo/types";
 import { alpha, useTheme } from "@mui/material/styles";
 import { drawPreview } from "../logo/drawPreview";
@@ -21,6 +22,7 @@ export type PreviewProps = {
 export function Preview(props: PreviewProps) {
     const theme = useTheme();
     const canvasRef = useRef<HTMLCanvasElement | null>(null);
+    const { settings, setSettings } = useSettings();
 
     useEffect(() => {
         const canvas = canvasRef.current
@@ -47,14 +49,28 @@ export function Preview(props: PreviewProps) {
                 penUp: theme.palette.text.secondary,
                 axis: alpha(theme.palette.text.secondary, 0.4),
             },
+            settings.hidePenUp,
         )
-    }, [props.progress, props.activeSegments, theme.palette.primary.main, theme.palette.text.secondary]);
+    }, [props.progress, props.activeSegments, theme.palette.primary.main, theme.palette.text.secondary, settings.hidePenUp]);
 
     return (
         <Paper variant="outlined" sx={{ flex: 1, minWidth: 0, display: 'flex', flexDirection: 'column' }}>
             <Box sx={{ px: 2, py: 1 }}>
                 <Stack direction="row" spacing={1} alignItems="center" justifyContent="space-between">
-                    <Typography variant="subtitle1">Preview</Typography>
+                    <Stack direction="row" spacing={1} alignItems="center">
+                        <Typography variant="subtitle1">Preview</Typography>
+                        <FormControlLabel
+                            control={
+                                <Checkbox
+                                    checked={settings.hidePenUp}
+                                    onChange={(e) => setSettings({ hidePenUp: e.target.checked })}
+                                    size="small"
+                                />
+                            }
+                            label="Hide PU"
+                            sx={{ ml: 1 }}
+                        />
+                    </Stack>
                     <Stack direction="row" spacing={1} alignItems="center">
                         <Button
                             size="small"

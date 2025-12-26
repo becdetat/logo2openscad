@@ -10,6 +10,7 @@ export function drawPreview(
     penUp: string
     axis: string
   },
+  hidePenUp: boolean = false,
 ) {
   const width = canvas.width
   const height = canvas.height
@@ -96,6 +97,9 @@ export function drawPreview(
     }
 
     if (!shouldDraw) continue
+
+    // Skip pen-up segments if hidePenUp is enabled
+    if (hidePenUp && !s.penDown) continue
 
     ctx.save()
     ctx.lineWidth = 2
