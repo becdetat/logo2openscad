@@ -35,6 +35,7 @@ Only a very small, mangled subset of the [Berkeley Logo](https://people.eecs.ber
   - `SETH` / `SETHEADING <deg>` - turn the turtle to a new absolute heading, relative to the Y axis
   - `HOME` - move the turtle to the origin (0, 0) and set the heading to 0 degrees relative to the Y axis
   - `PRINT <arg1>, <arg2>, ...` - output text as a single-line comment in the OpenSCAD output. Arguments can be strings in brackets `[text]`, variables `:varname`, or expressions. Multiple arguments are comma-separated and output space-separated.
+  - `EXTSETFN <value>` - set the resolution for arc drawing. FN (fragment number) controls how many segments are used to approximate arcs and circles. Default is 40 (producing 10 segments per 90° arc). This is inspired by OpenSCAD's `$fn` special variable. A 360° circle uses FN segments. Minimum value is 1. Decimal values are rounded down. Each arc drawn after EXTSETFN uses the current FN value, allowing different resolutions for different arcs. Examples: `EXTSETFN 3` creates triangles, `EXTSETFN 6` creates hexagons, `EXTSETFN 100` creates very smooth circles.
 - Note that commands that take more than one argument require a comma between arguments
 - The following binary arithmetic operations are supported: `+`, `-`, `*`, `/`, `^`
 - Unary minus is supported: `FORWARD -10` (equivalent to `BACK 10`)

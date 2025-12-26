@@ -1,11 +1,10 @@
 import { useCallback, useEffect, useState } from 'react'
 
 export type Settings = {
-  arcPointsPer90Deg: number
+  // Settings can be added here in the future
 }
 
 const DEFAULTS: Settings = {
-  arcPointsPer90Deg: 10,
 }
 
 const STORAGE_KEY = 'logo2openscad:settings'
@@ -16,8 +15,8 @@ function loadSettings(): Settings {
     if (!raw) return { ...DEFAULTS }
     const parsed = JSON.parse(raw)
     return {
-      arcPointsPer90Deg:
-        typeof parsed.arcPointsPer90Deg === 'number' ? parsed.arcPointsPer90Deg : DEFAULTS.arcPointsPer90Deg,
+      // Spread parsed settings when we have them
+      ...parsed,
     }
   } catch {
     return { ...DEFAULTS }
@@ -47,9 +46,5 @@ export function useSettings() {
     setSettingsState(loadSettings())
   }, [])
 
-  const resetArcPoints = useCallback(() => {
-    setSettings({ arcPointsPer90Deg: DEFAULTS.arcPointsPer90Deg })
-  }, [setSettings])
-
-  return { settings, setSettings, reloadSettings, resetArcPoints, DEFAULTS }
+  return { settings, setSettings, reloadSettings, DEFAULTS }
 }

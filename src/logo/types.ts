@@ -6,7 +6,7 @@ export type Expression =
   | { type: 'variable'; name: string }
   | { type: 'function'; name: string; arg: Expression }
 
-export type LogoCommandKind = 'FD' | 'BK' | 'LT' | 'RT' | 'PU' | 'PD' | 'ARC' | 'SETX' | 'SETY' | 'SETXY' | 'SETH' | "HOME" | 'MAKE' | 'REPEAT' | 'EXTCOMMENTPOS' | 'PRINT'
+export type LogoCommandKind = 'FD' | 'BK' | 'LT' | 'RT' | 'PU' | 'PD' | 'ARC' | 'SETX' | 'SETY' | 'SETXY' | 'SETH' | "HOME" | 'MAKE' | 'REPEAT' | 'EXTCOMMENTPOS' | 'EXTSETFN' | 'PRINT'
 
 export type SourceRange = {
   startLine: number
@@ -66,8 +66,4 @@ export type ParseResult = {
 export type ExecuteResult = {
   segments: LogoSegment[]
   polygons: LogoPolygon[]
-}
-
-export type ExecuteOptions = {
-  arcPointsPer90Deg: number
 }

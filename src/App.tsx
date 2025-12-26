@@ -25,7 +25,7 @@ export type AppProps = {
 }
 
 export default function App(props: AppProps) {
-  const { settings, reloadSettings } = useSettings()
+  const { reloadSettings } = useSettings()
   const { workspace, activeScript, error: workspaceError, createScript, deleteScript, renameScript, selectScript, updateScriptContent } = useWorkspace()
   const { collapsed, toggle: toggleSidebar } = useSidebarCollapsed()
   
@@ -50,7 +50,7 @@ export default function App(props: AppProps) {
   const parseResult = useMemo(() => parseLogo(source), [source])
   const runResult = useMemo(() => {
     try {
-      return executeLogo(parseResult.commands, { arcPointsPer90Deg: settings.arcPointsPer90Deg }, parseResult.comments)
+      return executeLogo(parseResult.commands, parseResult.comments)
     } catch (error) {
       // Add runtime error to diagnostics
       const errorMessage = error instanceof Error ? error.message : String(error)
@@ -61,7 +61,7 @@ export default function App(props: AppProps) {
       // Return empty result
       return { segments: [], polygons: [] }
     }
-  }, [parseResult, settings.arcPointsPer90Deg])
+  }, [parseResult])
   const openScad = useMemo(() => generateOpenScad(runResult.polygons), [runResult.polygons])
 
   useEffect(() => {

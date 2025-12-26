@@ -31,6 +31,7 @@ const aliasToKind: Record<string, LogoCommandKind> = {
   MAKE: 'MAKE',
   REPEAT: 'REPEAT',
   EXTCOMMENTPOS: 'EXTCOMMENTPOS',
+  EXTSETFN: 'EXTSETFN',
   PRINT: 'PRINT',
 }
 
@@ -248,6 +249,24 @@ export function parseLogo(source: string): ParseResult {
             }
           } else {
             diagnostics.push(diagnostic('EXTCOMMENTPOS optional parameter must be in brackets: EXTCOMMENTPOS [comment]', segRange))
+          }
+        } else if (kind === 'EXTSETFN') {
+          // EXTSETFN takes a single numeric expression
+          const argsText = trimmed.slice(cmdRaw.length).trim()
+          
+          if (!argsText) {
+            diagnostics.push(diagnostic('EXTSETFN requires a numeric value', segRange))
+          } else {
+            try {
+              const expr = parseExpression(argsText)
+              if (expr) {
+                commands.push({ kind, value: expr, sourceLine: lineNumber })
+              } else {
+                diagnostics.push(diagnostic('Invalid expression for EXTSETFN', segRange))
+              }
+            } catch {
+              diagnostics.push(diagnostic('Invalid expression for EXTSETFN', segRange))
+            }
           }
         } else if (kind === 'PRINT') {
           // PRINT takes comma-separated arguments: strings [text], variables :var, or expressions

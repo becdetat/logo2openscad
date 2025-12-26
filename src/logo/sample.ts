@@ -1,21 +1,21 @@
 export const defaultLogoScript = `// Square
-pendown;
-forward 50;
-right 90;
-forward 50;
-right 90;
-forward 50;
-right 90;
-forward 50;
+pendown
+forward 50
+right 90
+forward 50
+right 90
+forward 50
+right 90
+forward 50
 
 // Move without drawing
-penup;
-forward 80;
+penup
+forward 80
 
 /*
-Draw a 180 degree arc
-with a radius of 30mm
+Draw a 180 degree arc with a radius of 30mm and setting an FN of 40 segments per 360 degrees of arc
 */
-pendown;
-arc 180, 30;
+EXTSETFN 40
+pendown
+arc 180, 30
 `

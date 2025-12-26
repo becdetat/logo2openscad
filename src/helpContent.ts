@@ -141,7 +141,7 @@ ARC 90, 50      // Draw quarter circle
 ARC 360, 20     // Draw full circle
 \`\`\`
 
-The number of points per 90° can be configured in Settings.
+Arc resolution can be controlled with the EXTSETFN command (see Extension Commands below).
 
 ---
 
@@ -282,6 +282,46 @@ FD 50
 EXTCOMMENTPOS           // Without text
 \`\`\`
 
+### EXTSETFN \`value\`
+Set the resolution for arc drawing. FN (fragment number) controls how many segments are used to approximate
+arcs and circles. This command is inspired by OpenSCAD's \`$fn\` special variable.
+
+- **Default**: FN = 40 (produces 10 segments per 90° arc)
+- **Formula**: A 360° circle uses FN segments
+- **Minimum**: FN must be at least 1
+- **Decimals**: Values are rounded down to integers
+- **Per-arc control**: Each arc drawn after EXTSETFN uses the current FN value
+
+\`\`\`logo
+// Default FN=40: smooth circle with 40 segments
+ARC 360, 50
+
+// Low resolution: pentagon (5 segments)
+EXTSETFN 5
+ARC 360, 30
+
+// High resolution: very smooth circle (100 segments)
+EXTSETFN 100
+ARC 360, 40
+
+// Triangle (3 segments)
+EXTSETFN 3
+ARC 360, 20
+
+// Different resolution for different arcs
+EXTSETFN 8          // Octagon
+ARC 360, 25
+EXTSETFN 12         // 12-sided polygon
+ARC 360, 25
+\`\`\`
+
+**Examples**:
+- \`EXTSETFN 3\`: 360° arc draws a triangle
+- \`EXTSETFN 4\`: 360° arc draws a square
+- \`EXTSETFN 6\`: 360° arc draws a hexagon
+- \`EXTSETFN 100\`: Very smooth circles
+- \`MAKE "fn 3; REPEAT 4 [EXTSETFN :fn; ARC 360, 25; MAKE "fn :fn + 1]\`: Draws polygons from triangle to hexagon
+
 ### PRINT \`arg1, arg2, ...\`
 Output text as a single-line comment in the OpenSCAD output. Arguments are comma-separated and can be:
 - **Strings in brackets**: \`[text]\`
@@ -379,6 +419,6 @@ FD :height
 1. **Preview Animation**: The preview updates only when you click Play or press Ctrl+Enter, not on every edit
 2. **Error Handling**: Invalid commands are skipped and reported in the error panel
 3. **Comments in Output**: Comments from your script are preserved in the OpenSCAD output
-4. **Settings**: Configure arc smoothness in the Settings dialog
+4. **Arc Resolution**: Use EXTSETFN to control the smoothness of arcs and circles
 5. **Pen-up Travel**: Shown as dashed lines in the preview
 `

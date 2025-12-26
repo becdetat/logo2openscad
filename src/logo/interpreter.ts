@@ -1,5 +1,4 @@
 import type {
-  ExecuteOptions,
   ExecuteResult,
   Point,
   LogoCommand,
@@ -17,7 +16,6 @@ function degToRad(deg: number) {
 
 export function executeLogo(
   commands: LogoCommand[],
-  options: ExecuteOptions,
   allComments: LogoComment[],
 ): ExecuteResult {
   const segments: LogoSegment[] = []
@@ -29,6 +27,7 @@ export function executeLogo(
   let headingDeg = 0 // 0 = up
   let penDown = true
   let arcGroupId = 0
+  let currentFn = 40 // Default FN value (40/4 = 10 segments per 90°)
 
   let currentPolygon: Point[] | null = [{ x, y }]
   let currentPolygonComments: LogoComment[] = []
@@ -209,7 +208,7 @@ export function executeLogo(
 
         if (radius === 0 || angleDeg === 0) break
 
-        const segmentCount = Math.max(1, Math.ceil((Math.abs(angleDeg) / 90) * options.arcPointsPer90Deg))
+        const segmentCount = Math.max(1, Math.round((Math.abs(angleDeg) / 360) * currentFn))
 
         const startHeadingRad = degToRad(headingDeg)
         const angleStep = degToRad(angleDeg) / segmentCount
@@ -244,6 +243,17 @@ export function executeLogo(
         if (penDown) {
           ensurePolygonStarted()
           currentPolygon!.push({ x, y })
+        }
+        break
+      }
+      case 'EXTSETFN': {
+        if (cmd.value) {
+          const fnValue = evaluateExpression(cmd.value, variables)
+          const fnInt = Math.floor(fnValue)
+          if (fnInt < 1) {
+            throw new Error(`EXTSETFN value must be at least 1, got ${fnValue}`)
+          }
+          currentFn = fnInt
         }
         break
       }
