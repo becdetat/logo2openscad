@@ -11,6 +11,8 @@ export function drawPreview(
     axis: string
   },
   hidePenUp: boolean = false,
+  penWidth: number = 2,
+  dpr: number = 1,
 ) {
   const width = canvas.width
   const height = canvas.height
@@ -50,7 +52,7 @@ export function drawPreview(
   // Axes
   ctx.save()
   ctx.strokeStyle = colors.axis
-  ctx.lineWidth = 1
+  ctx.lineWidth = 1 * dpr
   ctx.setLineDash([4, 6])
   const o = toScreen({ x: 0, y: 0 })
   ctx.beginPath()
@@ -102,11 +104,12 @@ export function drawPreview(
     if (hidePenUp && !s.penDown) continue
 
     ctx.save()
-    ctx.lineWidth = 2
     if (s.penDown) {
+      ctx.lineWidth = penWidth
       ctx.strokeStyle = colors.penDown
       ctx.setLineDash([])
     } else {
+      ctx.lineWidth = 2 * dpr
       ctx.strokeStyle = colors.penUp
       ctx.setLineDash([8, 6])
     }
@@ -128,7 +131,7 @@ export function drawPreview(
     ctx.save()
     ctx.fillStyle = colors.penDown
     ctx.beginPath()
-    ctx.arc(sp.x, sp.y, 4, 0, Math.PI * 2)
+    ctx.arc(sp.x, sp.y, 4 * dpr, 0, Math.PI * 2)
     ctx.fill()
     ctx.restore()
   }

@@ -50,8 +50,10 @@ export function Preview(props: PreviewProps) {
                 axis: alpha(theme.palette.text.secondary, 0.4),
             },
             settings.hidePenUp,
+            settings.penWidth * dpr,
+            dpr,
         )
-    }, [props.progress, props.activeSegments, theme.palette.primary.main, theme.palette.text.secondary, settings.hidePenUp]);
+    }, [props.progress, props.activeSegments, theme.palette.primary.main, theme.palette.text.secondary, settings.hidePenUp, settings.penWidth]);
 
     return (
         <Paper variant="outlined" sx={{ flex: 1, minWidth: 0, display: 'flex', flexDirection: 'column' }}>
