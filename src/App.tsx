@@ -92,7 +92,7 @@ export default function App(props: AppProps) {
     setIsPlaying(false)
   }
 
-  // Auto-play preview when switching scripts or when segments change
+  // Auto-play preview when switching scripts
   useEffect(() => {
     if (runResult.segments.length > 0) {
       setActiveSegments(runResult.segments)
@@ -102,7 +102,7 @@ export default function App(props: AppProps) {
     } else {
       setIsPlaying(false)
     }
-  }, [activeScript.id, runResult.segments])
+  }, [activeScript.id])
 
   // Auto-play when runResult first has segments
   useEffect(() => {
@@ -236,6 +236,9 @@ export default function App(props: AppProps) {
   
   const handleCreateConfirm = (name: string) => {
     createScript(name)
+    if (!collapsed) {
+      toggleSidebar() // Close sidebar after creating script
+    }
   }
   
   const handleRenameScript = (scriptId: string) => {
