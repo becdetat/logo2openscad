@@ -15,7 +15,6 @@ import {
   Button,
 } from '@mui/material'
 import ChevronLeftIcon from '@mui/icons-material/ChevronLeft'
-import ChevronRightIcon from '@mui/icons-material/ChevronRight'
 import AddIcon from '@mui/icons-material/Add'
 import MoreVertIcon from '@mui/icons-material/MoreVert'
 import type { LogoScript } from '../types/workspace'
@@ -76,30 +75,34 @@ export function WorkspaceSidebar(props: WorkspaceSidebarProps) {
     })
   }
 
+  const handleSelectScript = (scriptId: string) => {
+    props.onSelectScript(scriptId)
+    props.onToggleCollapse() // Auto-collapse sidebar after selecting
+  }
+
   return (
     <>
       <Drawer
-        variant="permanent"
+        variant="temporary"
+        open={!props.collapsed}
+        onClose={props.onToggleCollapse}
+        ModalProps={{
+          keepMounted: true, // Better mobile performance
+        }}
         sx={{
-          width: props.collapsed ? 0 : DRAWER_WIDTH,
+          width: DRAWER_WIDTH,
           flexShrink: 0,
           '& .MuiDrawer-paper': {
             width: DRAWER_WIDTH,
             boxSizing: 'border-box',
-            transform: props.collapsed ? `translateX(-${DRAWER_WIDTH}px)` : 'translateX(0)',
-            transition: (theme) =>
-              theme.transitions.create('transform', {
-                easing: theme.transitions.easing.sharp,
-                duration: theme.transitions.duration.enteringScreen,
-              }),
           },
         }}
       >
-        <Toolbar />
+        {/* <Toolbar /> */}
         <Box sx={{ overflow: 'auto', display: 'flex', flexDirection: 'column', height: '100%' }}>
           <Stack direction="row" alignItems="center" justifyContent="space-between" sx={{ px: 2, py: 1 }}>
             <Typography variant="h6" component="div">
-              Scripts
+              Workspace
             </Typography>
             <IconButton size="small" onClick={props.onToggleCollapse} edge="end">
               <ChevronLeftIcon />
@@ -137,7 +140,7 @@ export function WorkspaceSidebar(props: WorkspaceSidebarProps) {
               >
                 <ListItemButton
                   selected={script.id === props.activeScriptId}
-                  onClick={() => props.onSelectScript(script.id)}
+                  onClick={() => handleSelectScript(script.id)}
                 >
                   <ListItemText 
                     primary={script.name}
@@ -153,20 +156,7 @@ export function WorkspaceSidebar(props: WorkspaceSidebarProps) {
         </Box>
       </Drawer>
 
-      {/* Collapse button when sidebar is collapsed */}
-      {props.collapsed && (
-        <IconButton
-          onClick={props.onToggleCollapse}
-          sx={{
-            position: 'fixed',
-            left: 8,
-            top: 72,
-            zIndex: (theme) => theme.zIndex.drawer + 1,
-          }}
-        >
-          <ChevronRightIcon />
-        </IconButton>
-      )}
+
 
       {/* Context Menu */}
       <Menu

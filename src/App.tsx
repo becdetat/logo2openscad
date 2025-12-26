@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
 import type * as Monaco from 'monaco-editor'
 import type { OnMount } from '@monaco-editor/react'
-import { Box, Divider } from '@mui/material'
+import { Box, Divider, IconButton, Typography } from '@mui/material'
 import { executeLogo } from './logo/interpreter'
 import { generateOpenScad } from './logo/openscad'
 import { parseLogo } from './logo/parser'
@@ -17,6 +17,7 @@ import { WorkspaceSidebar } from './components/WorkspaceSidebar'
 import { Preview } from './components/Preview'
 import { OpenScadEditor } from './components/OpenScadEditor'
 import { LogoEditor } from './components/LogoEditor'
+import ChevronLeftIcon from '@mui/icons-material/ChevronLeft'
 
 export type AppProps = {
   toggleDarkMode: () => void
@@ -258,18 +259,59 @@ export default function App(props: AppProps) {
 
   return (
     <Box sx={{ height: '100vh', display: 'flex', flexDirection: 'column' }}>
-      <WorkspaceSidebar
-        collapsed={collapsed}
-        onToggleCollapse={toggleSidebar}
-        scripts={workspace.scripts}
-        activeScriptId={workspace.activeScriptId}
-        onSelectScript={selectScript}
-        onCreateScript={handleCreateScript}
-        onRenameScript={handleRenameScript}
-        onDeleteScript={handleDeleteScript}
-      />
-      
       <Box sx={{ flex: 1, minHeight: 0, display: 'flex' }}>
+        {/* Collapsed sidebar column */}
+        {collapsed && (
+          <Box
+            onClick={toggleSidebar}
+            sx={{
+              width: 32,
+              flexShrink: 0,
+              backgroundColor: (theme) => theme.palette.mode === 'dark' ? 'rgba(255, 255, 255, 0.08)' : 'rgba(0, 0, 0, 0.04)',
+              borderRight: (theme) => `1px solid ${theme.palette.divider}`,
+              cursor: 'pointer',
+              display: 'flex',
+              alignItems: 'flex-start',
+              justifyContent: 'center',
+              paddingTop: 2,
+              transition: (theme) =>
+                theme.transitions.create(['background-color', 'width'], {
+                  duration: theme.transitions.duration.short,
+                }),
+              '&:hover': {
+                backgroundColor: (theme) => theme.palette.mode === 'dark' ? 'rgba(255, 255, 255, 0.12)' : 'rgba(0, 0, 0, 0.08)',
+                width: 40,
+              },
+            }}
+          >
+            <Typography
+              variant="button"
+              sx={{
+                writingMode: 'vertical-rl',
+                textOrientation: 'mixed',
+                userSelect: 'none',
+                letterSpacing: '0.1em',
+                fontWeight: 500,
+                transform: 'rotate(180deg)',
+              }}
+            >
+              <span style={{ paddingLeft: 10 }}>Workspace</span>
+              <ChevronLeftIcon />
+            </Typography>
+          </Box>
+        )}
+
+        <WorkspaceSidebar
+          collapsed={collapsed}
+          onToggleCollapse={toggleSidebar}
+          scripts={workspace.scripts}
+          activeScriptId={workspace.activeScriptId}
+          onSelectScript={selectScript}
+          onCreateScript={handleCreateScript}
+          onRenameScript={handleRenameScript}
+          onDeleteScript={handleDeleteScript}
+        />
+        
         <LogoEditor
           scriptName={activeScript.name}
           source={source}
