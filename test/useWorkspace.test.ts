@@ -354,13 +354,15 @@ describe('useWorkspace', () => {
         result.current.createScript('Second')
       })
       const firstScriptId = result.current.workspace.scripts[0].id
+      const secondScriptOriginalContent = result.current.workspace.scripts[1].content
       
       act(() => {
         result.current.updateScriptContent(firstScriptId, 'FD 100')
       })
 
       expect(result.current.workspace.scripts[0].content).toBe('FD 100')
-      expect(result.current.workspace.scripts[1].content).toBe('')
+      // Second script should still have its original default content (unchanged)
+      expect(result.current.workspace.scripts[1].content).toBe(secondScriptOriginalContent)
     })
   })
 
