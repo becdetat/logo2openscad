@@ -5,12 +5,12 @@ import { defaultLogoScript } from '../logo/sample'
 const WORKSPACE_KEY = 'logo2openscad:workspace'
 const LEGACY_KEY = 'turtle2openscad:script'
 
-function createEmptyScript(name: string = 'Untitled1'): LogoScript {
+function createEmptyScript(name: string = 'Untitled1', useDefaultContent: boolean = false): LogoScript {
   const now = Date.now()
   return {
     id: crypto.randomUUID(),
     name,
-    content: '',
+    content: useDefaultContent ? defaultLogoScript : '',
     createdAt: now,
     updatedAt: now,
   }
@@ -142,7 +142,7 @@ export function useWorkspace() {
         scriptName = trimmedName
       }
 
-      const newScript = createEmptyScript(scriptName)
+      const newScript = createEmptyScript(scriptName, true)
       return {
         ...prev,
         scripts: [...prev.scripts, newScript],
