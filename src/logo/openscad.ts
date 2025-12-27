@@ -5,8 +5,10 @@ function pointsEqual(a: Point, b: Point) {
   return a.x === b.x && a.y === b.y
 }
 
-export function generateOpenScad(polygons: LogoPolygon[]): string {
+export function generateOpenScad(polygons: LogoPolygon[], indentSpaces: number = 2): string {
   if (polygons.length === 0) return '// No polygons'
+
+  const indent = ' '.repeat(indentSpaces)
 
   const blocks: string[] = []
   for (const poly of polygons) {
@@ -42,7 +44,7 @@ export function generateOpenScad(polygons: LogoPolygon[]): string {
       
       const p = pts[i]
       const comma = i === pts.length - 1 ? '' : ','
-      lines.push(`  [${formatNum(p.x)}, ${formatNum(p.y)}]${comma}`)
+      lines.push(`${indent}[${formatNum(p.x)}, ${formatNum(p.y)}]${comma}`)
     }
     lines.push(']);')
 

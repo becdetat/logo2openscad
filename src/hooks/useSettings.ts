@@ -6,11 +6,13 @@ const SETTINGS_CHANGED_EVENT = 'logo2openscad:settings-changed'
 export type Settings = {
   hidePenUp: boolean
   penWidth: number
+  indentSpaces: number
 }
 
 const DEFAULTS: Settings = {
   hidePenUp: false,
   penWidth: 2,
+  indentSpaces: 4,
 }
 
 const STORAGE_KEY = 'logo2openscad:settings'
@@ -23,6 +25,7 @@ function loadSettings(): Settings {
     return {
       hidePenUp: typeof parsed.hidePenUp === 'boolean' ? parsed.hidePenUp : DEFAULTS.hidePenUp,
       penWidth: typeof parsed.penWidth === 'number' && parsed.penWidth > 0 ? parsed.penWidth : DEFAULTS.penWidth,
+      indentSpaces: typeof parsed.indentSpaces === 'number' && parsed.indentSpaces > 0 ? parsed.indentSpaces : DEFAULTS.indentSpaces,
     }
   } catch {
     return { ...DEFAULTS }

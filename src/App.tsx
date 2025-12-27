@@ -28,6 +28,7 @@ export default function App(props: AppProps) {
   const { reloadSettings } = useSettings()
   const { workspace, activeScript, error: workspaceError, createScript, deleteScript, renameScript, selectScript, updateScriptContent } = useWorkspace()
   const { collapsed, toggle: toggleSidebar } = useSidebarCollapsed()
+  const { settings } = useSettings()
   
   const [isPlaying, setIsPlaying] = useState(false)
   const [speed, setSpeed] = useState(10)
@@ -62,7 +63,7 @@ export default function App(props: AppProps) {
       return { segments: [], polygons: [] }
     }
   }, [parseResult])
-  const openScad = useMemo(() => generateOpenScad(runResult.polygons), [runResult.polygons])
+  const openScad = useMemo(() => generateOpenScad(runResult.polygons, settings.indentSpaces), [runResult.polygons, settings.indentSpaces])
 
   useEffect(() => {
     runResultRef.current = runResult
