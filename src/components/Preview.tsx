@@ -3,7 +3,7 @@ import PauseIcon from '@mui/icons-material/Pause'
 import PlayArrowIcon from '@mui/icons-material/PlayArrow'
 import { useEffect, useRef } from "react";
 import { useSettings } from "../hooks/useSettings";
-import type { LogoSegment } from "../logo/types";
+import type { LogoSegment, Marker } from "../logo/types";
 import { alpha, useTheme } from "@mui/material/styles";
 import { drawPreview } from "../logo/drawPreview";
 import { clamp } from "../helpers/clamp";
@@ -13,6 +13,7 @@ export type PreviewProps = {
     speed: number;
     progress: number;
     activeSegments: LogoSegment[];
+    markers: Marker[];
     hasSegments: boolean;
     onPlay: () => void;
     onPause: () => void;
@@ -52,8 +53,9 @@ export function Preview(props: PreviewProps) {
             settings.hidePenUp,
             settings.penWidth * dpr,
             dpr,
+            props.markers,
         )
-    }, [props.progress, props.activeSegments, theme.palette.primary.main, theme.palette.text.secondary, settings.hidePenUp, settings.penWidth]);
+    }, [props.progress, props.activeSegments, props.markers, theme.palette.primary.main, theme.palette.text.secondary, settings.hidePenUp, settings.penWidth]);
 
     return (
         <Paper variant="outlined" sx={{ flex: 1, minWidth: 0, display: 'flex', flexDirection: 'column' }}>

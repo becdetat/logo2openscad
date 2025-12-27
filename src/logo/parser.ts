@@ -32,6 +32,7 @@ const aliasToKind: Record<string, LogoCommandKind> = {
   REPEAT: 'REPEAT',
   EXTCOMMENTPOS: 'EXTCOMMENTPOS',
   EXTSETFN: 'EXTSETFN',
+  EXTMARKER: 'EXTMARKER',
   PRINT: 'PRINT',
 }
 
@@ -255,6 +256,61 @@ export function parseLogo(source: string): ParseResult {
             }
           } else {
             diagnostics.push(diagnostic('EXTCOMMENTPOS optional parameter must be in brackets: EXTCOMMENTPOS [comment]', segRange))
+          }
+        } else if (kind === 'EXTMARKER') {
+          // EXTMARKER optionally takes [comment text], X, Y
+          // Examples: EXTMARKER, EXTMARKER [label], EXTMARKER [label], 5, 10
+          const argsText = trimmed.slice(cmdRaw.length).trim()
+          
+          let comment: string | undefined = undefined
+          let remainingArgs = argsText
+          
+          // Check if first arg is bracketed comment
+          if (argsText.startsWith('[')) {
+            let bracketDepth = 0
+            let bracketEnd = -1
+            for (let i = 0; i < argsText.length; i++) {
+              if (argsText[i] === '[') bracketDepth++
+              else if (argsText[i] === ']') {
+                bracketDepth--
+                if (bracketDepth === 0) {
+                  bracketEnd = i
+                  break
+                }
+              }
+            }
+            
+            if (bracketEnd === -1) {
+              diagnostics.push(diagnostic('EXTMARKER comment missing closing bracket ]', segRange))
+              break
+            } else {
+              comment = argsText.slice(1, bracketEnd).trim()
+              remainingArgs = argsText.slice(bracketEnd + 1).trim()
+              // Remove leading comma if present
+              if (remainingArgs.startsWith(',')) {
+                remainingArgs = remainingArgs.slice(1).trim()
+              }
+            }
+          }
+          
+          // Parse optional X, Y coordinates
+          if (!remainingArgs) {
+            // No coordinates provided, use current position
+            commands.push({ kind, comment, sourceLine: lineNumber })
+          } else {
+            // Parse X, Y expressions
+            const parts = remainingArgs.split(',')
+            if (parts.length !== 2) {
+              diagnostics.push(diagnostic('EXTMARKER with coordinates requires exactly 2 values: X, Y', segRange))
+            } else {
+              const xExpr = parseExpression(parts[0].trim())
+              const yExpr = parseExpression(parts[1].trim())
+              if (!xExpr || !yExpr) {
+                diagnostics.push(diagnostic('EXTMARKER coordinates must be valid expressions', segRange))
+              } else {
+                commands.push({ kind, comment, value: xExpr, value2: yExpr, sourceLine: lineNumber })
+              }
+            }
           }
         } else if (kind === 'EXTSETFN') {
           // EXTSETFN takes a single numeric expression

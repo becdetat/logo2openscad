@@ -1,4 +1,4 @@
-import type { LogoSegment } from './types.js'
+import type { LogoSegment, Marker } from './types.js'
 
 export function drawPreview(
   ctx: CanvasRenderingContext2D,
@@ -13,6 +13,7 @@ export function drawPreview(
   hidePenUp: boolean = false,
   penWidth: number = 2,
   dpr: number = 1,
+  markers: Marker[] = [],
 ) {
   const width = canvas.width
   const height = canvas.height
@@ -133,6 +134,27 @@ export function drawPreview(
     ctx.beginPath()
     ctx.arc(sp.x, sp.y, 4 * dpr, 0, Math.PI * 2)
     ctx.fill()
+    ctx.restore()
+  }
+
+  // Draw markers as red crosses
+  for (const marker of markers) {
+    const sp = toScreen({ x: marker.x, y: marker.y })
+    const size = 8 * dpr
+    
+    ctx.save()
+    ctx.strokeStyle = 'red'
+    ctx.lineWidth = 2 * dpr
+    ctx.setLineDash([])
+    
+    // Draw cross
+    ctx.beginPath()
+    ctx.moveTo(sp.x - size, sp.y)
+    ctx.lineTo(sp.x + size, sp.y)
+    ctx.moveTo(sp.x, sp.y - size)
+    ctx.lineTo(sp.x, sp.y + size)
+    ctx.stroke()
+    
     ctx.restore()
   }
 }

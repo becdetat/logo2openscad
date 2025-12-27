@@ -476,6 +476,83 @@ describe('interpreter', () => {
     })
   })
 
+  describe('EXTMARKER command', () => {
+    it('should add marker at current position', () => {
+      const { commands, comments } = parseLogo('FD 10\nEXTMARKER')
+      const result = executeLogo(commands, comments)
+      
+      expect(result.markers).toHaveLength(1)
+      expect(result.markers[0].x).toBeCloseTo(0, 5)
+      expect(result.markers[0].y).toBeCloseTo(10, 5)
+      expect(result.markers[0].comment).toBeUndefined()
+    })
+
+    it('should add marker with comment', () => {
+      const { commands, comments } = parseLogo('SETXY 5, 10\nEXTMARKER [Test marker]')
+      const result = executeLogo(commands, comments)
+      
+      expect(result.markers).toHaveLength(1)
+      expect(result.markers[0].x).toBeCloseTo(5, 5)
+      expect(result.markers[0].y).toBeCloseTo(10, 5)
+      expect(result.markers[0].comment).toBe('Test marker')
+    })
+
+    it('should add marker at specified coordinates', () => {
+      const { commands, comments } = parseLogo('FD 100\nEXTMARKER [Origin], 0, 0')
+      const result = executeLogo(commands, comments)
+      
+      expect(result.markers).toHaveLength(1)
+      expect(result.markers[0].x).toBeCloseTo(0, 5)
+      expect(result.markers[0].y).toBeCloseTo(0, 5)
+      expect(result.markers[0].comment).toBe('Origin')
+      // Turtle should still be at (0, 100)
+      expect(result.segments[result.segments.length - 1].to.y).toBeCloseTo(100, 5)
+    })
+
+    it('should add marker with expression coordinates', () => {
+      const { commands, comments } = parseLogo('MAKE "x 10\nMAKE "y 20\nEXTMARKER [Test], :x, :y + 5')
+      const result = executeLogo(commands, comments)
+      
+      expect(result.markers).toHaveLength(1)
+      expect(result.markers[0].x).toBeCloseTo(10, 5)
+      expect(result.markers[0].y).toBeCloseTo(25, 5)
+      expect(result.markers[0].comment).toBe('Test')
+    })
+
+    it('should add marker without moving turtle', () => {
+      const { commands, comments } = parseLogo('FD 10\nEXTMARKER [Away], 50, 50\nFD 10')
+      const result = executeLogo(commands, comments)
+      
+      expect(result.markers).toHaveLength(1)
+      expect(result.markers[0].x).toBeCloseTo(50, 5)
+      expect(result.markers[0].y).toBeCloseTo(50, 5)
+      // Turtle movement should be unaffected
+      expect(result.segments[result.segments.length - 1].to.y).toBeCloseTo(20, 5)
+    })
+
+    it('should generate comment like EXTCOMMENTPOS', () => {
+      const { commands, comments} = parseLogo('FD 10\nEXTMARKER [Test]\nFD 10')
+      const result = executeLogo(commands, comments)
+      
+      expect(result.polygons).toHaveLength(1)
+      // After FD 10, polygon has: origin (index 0), end point (index 1)
+      // EXTMARKER should add comment at index 2 (before next point, like EXTCOMMENTPOS)
+      const commentsAtPoint = result.polygons[0].commentsByPointIndex.get(2)
+      expect(commentsAtPoint).toBeDefined()
+      expect(commentsAtPoint!.some(c => c.text.includes('Test') && c.text.includes('x=0') && c.text.includes('y=10'))).toBe(true)
+    })
+
+    it('should handle multiple markers', () => {
+      const { commands, comments } = parseLogo('EXTMARKER [A], 0, 0\nFD 10\nEXTMARKER [B]\nEXTMARKER [C], 20, 20')
+      const result = executeLogo(commands, comments)
+      
+      expect(result.markers).toHaveLength(3)
+      expect(result.markers[0].comment).toBe('A')
+      expect(result.markers[1].comment).toBe('B')
+      expect(result.markers[2].comment).toBe('C')
+    })
+  })
+
   describe('PRINT command', () => {
     it('should output text as a comment', () => {
       const { commands, comments } = parseLogo('PRINT [Hello, World!]')

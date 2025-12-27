@@ -308,6 +308,66 @@ describe('parser', () => {
     })
   })
 
+  describe('EXTMARKER command', () => {
+    it('should parse EXTMARKER without parameters', () => {
+      const result = parseLogo('EXTMARKER')
+      expect(result.commands).toHaveLength(1)
+      expect(result.commands[0].kind).toBe('EXTMARKER')
+      expect(result.commands[0].comment).toBeUndefined()
+      expect(result.commands[0].value).toBeUndefined()
+      expect(result.diagnostics).toHaveLength(0)
+    })
+
+    it('should parse EXTMARKER with comment only', () => {
+      const result = parseLogo('EXTMARKER [Corner point]')
+      expect(result.commands).toHaveLength(1)
+      expect(result.commands[0].kind).toBe('EXTMARKER')
+      expect(result.commands[0].comment).toBe('Corner point')
+      expect(result.commands[0].value).toBeUndefined()
+      expect(result.diagnostics).toHaveLength(0)
+    })
+
+    it('should parse EXTMARKER with comment and coordinates', () => {
+      const result = parseLogo('EXTMARKER [Label], 5, -10')
+      expect(result.commands).toHaveLength(1)
+      expect(result.commands[0].kind).toBe('EXTMARKER')
+      expect(result.commands[0].comment).toBe('Label')
+      expect(result.commands[0].value).toBeDefined()
+      expect(result.commands[0].value2).toBeDefined()
+      expect(result.diagnostics).toHaveLength(0)
+    })
+
+    it('should parse EXTMARKER with coordinates only (no comment)', () => {
+      const result = parseLogo('EXTMARKER 10, 20')
+      expect(result.commands).toHaveLength(1)
+      expect(result.commands[0].kind).toBe('EXTMARKER')
+      expect(result.commands[0].comment).toBeUndefined()
+      expect(result.commands[0].value).toBeDefined()
+      expect(result.commands[0].value2).toBeDefined()
+      expect(result.diagnostics).toHaveLength(0)
+    })
+
+    it('should parse EXTMARKER with expression coordinates', () => {
+      const result = parseLogo('EXTMARKER [Test], :x + 5, :y * 2')
+      expect(result.commands).toHaveLength(1)
+      expect(result.commands[0].kind).toBe('EXTMARKER')
+      expect(result.commands[0].comment).toBe('Test')
+      expect(result.diagnostics).toHaveLength(0)
+    })
+
+    it('should report error for EXTMARKER with unclosed bracket', () => {
+      const result = parseLogo('EXTMARKER [comment')
+      expect(result.diagnostics.length).toBeGreaterThan(0)
+      expect(result.diagnostics[0].message).toContain('missing closing bracket')
+    })
+
+    it('should report error for EXTMARKER with wrong number of coordinates', () => {
+      const result = parseLogo('EXTMARKER 5')
+      expect(result.diagnostics.length).toBeGreaterThan(0)
+      expect(result.diagnostics[0].message).toContain('exactly 2 values')
+    })
+  })
+
   describe('PRINT command', () => {
     it('should parse PRINT with text in brackets', () => {
       const result = parseLogo('PRINT [Hello, World!]')

@@ -6,7 +6,7 @@ export type Expression =
   | { type: 'variable'; name: string }
   | { type: 'function'; name: string; arg: Expression }
 
-export type LogoCommandKind = 'FD' | 'BK' | 'LT' | 'RT' | 'PU' | 'PD' | 'ARC' | 'SETX' | 'SETY' | 'SETXY' | 'SETH' | "HOME" | 'MAKE' | 'REPEAT' | 'EXTCOMMENTPOS' | 'EXTSETFN' | 'PRINT'
+export type LogoCommandKind = 'FD' | 'BK' | 'LT' | 'RT' | 'PU' | 'PD' | 'ARC' | 'SETX' | 'SETY' | 'SETXY' | 'SETH' | "HOME" | 'MAKE' | 'REPEAT' | 'EXTCOMMENTPOS' | 'EXTSETFN' | 'PRINT' | 'EXTMARKER'
 
 export type SourceRange = {
   startLine: number
@@ -63,7 +63,14 @@ export type ParseResult = {
   comments: LogoComment[]
 }
 
+export type Marker = {
+  x: number
+  y: number
+  comment?: string
+}
+
 export type ExecuteResult = {
   segments: LogoSegment[]
   polygons: LogoPolygon[]
+  markers: Marker[]
 }

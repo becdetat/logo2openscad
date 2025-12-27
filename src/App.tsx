@@ -60,7 +60,7 @@ export default function App(props: AppProps) {
         range: { startLine: 1, startColumn: 1, endLine: 1, endColumn: 1 }
       })
       // Return empty result
-      return { segments: [], polygons: [] }
+      return { segments: [], polygons: [], markers: [] }
     }
   }, [parseResult])
   const openScad = useMemo(() => generateOpenScad(runResult.polygons, settings.indentSpaces), [runResult.polygons, settings.indentSpaces])
@@ -337,6 +337,7 @@ export default function App(props: AppProps) {
           speed={speed}
           progress={progress}
           activeSegments={activeSegments}
+          markers={runResult.markers}
           hasSegments={runResult.segments.length > 0}
           onPlay={handlePlay}
           onPause={handlePause}

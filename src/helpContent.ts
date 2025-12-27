@@ -282,6 +282,29 @@ FD 50
 EXTCOMMENTPOS           // Without text
 \`\`\`
 
+### EXTMARKER \`[text], X, Y\`
+Add a visual marker (red cross) in the preview and insert a position comment in the OpenSCAD 
+output. Unlike EXTCOMMENTPOS, this command shows the marker position in the preview canvas.
+
+- **Without arguments**: Places marker at current turtle position
+- **With comment**: \`EXTMARKER [label]\` - Labels the marker
+- **With coordinates**: \`EXTMARKER [label], X, Y\` - Places marker at specified position without moving turtle
+
+\`\`\`logo
+// Mark the current position
+FD 50
+EXTMARKER [Corner 1]
+
+// Mark a specific position without moving
+FD 50
+EXTMARKER [Origin], 0, 0
+
+// Mark with variables
+MAKE "x 10
+MAKE "y 20
+EXTMARKER [Point A], :x, :y
+\`\`\`
+
 ### EXTSETFN \`value\`
 Set the resolution for arc drawing. FN (fragment number) controls how many segments are used to approximate
 arcs and circles. This command is inspired by OpenSCAD's \`$fn\` special variable.

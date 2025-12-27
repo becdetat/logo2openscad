@@ -5,6 +5,7 @@ import type {
   LogoComment,
   LogoPolygon,
   LogoSegment,
+  Marker,
 } from './types'
 import { evaluateExpression, type VariableContext } from './expression'
 import { parseLogo } from './parser'
@@ -20,6 +21,7 @@ export function executeLogo(
 ): ExecuteResult {
   const segments: LogoSegment[] = []
   const polygons: LogoPolygon[] = []
+  const markers: Marker[] = []
   const variables: VariableContext = new Map()
 
   let x = 0
@@ -280,6 +282,40 @@ export function executeLogo(
         }
         break
       }
+      case 'EXTMARKER': {
+        // Add a visual marker in the preview (not in OpenSCAD output)
+        let markerX = x
+        let markerY = y
+        
+        // If X, Y coordinates provided, use those instead
+        if (cmd.value && cmd.value2) {
+          markerX = evaluateExpression(cmd.value, variables)
+          markerY = evaluateExpression(cmd.value2, variables)
+        }
+        
+        markers.push({
+          x: markerX,
+          y: markerY,
+          comment: cmd.comment,
+        })
+        
+        // Also generate a comment like EXTCOMMENTPOS does
+        const label = cmd.comment || 'Marker'
+        const commentText = `// ${label}: x=${formatNum(markerX)}, y=${formatNum(markerY)}`
+        const positionComment: LogoComment = { text: commentText, line: cmdLine }
+        
+        if (penDown) {
+          ensurePolygonStarted()
+          const targetIndex = currentPolygon!.length === 1 ? 0 : currentPolygon!.length
+          const existing = currentPolygonCommentsByPointIndex.get(targetIndex) || []
+          currentPolygonCommentsByPointIndex.set(targetIndex, [...existing, positionComment])
+        } else {
+          ensurePolygonStarted()
+          currentPolygonComments.push(positionComment)
+          finalizePolygon(true)
+        }
+        break
+      }
       case 'PRINT': {
         // Generate a single-line comment with the evaluated arguments
         const printArgs = cmd.printArgs || []
@@ -344,5 +380,5 @@ export function executeLogo(
     finalizePolygon()
   }
 
-  return { segments, polygons }
+  return { segments, polygons, markers }
 }
