@@ -92,6 +92,14 @@ export default function App(props: AppProps) {
     setIsPlaying(false)
   }
 
+  // Helper function to start preview with the latest segments from ref
+  const startPreviewFromRef = () => {
+    setActiveSegments(runResultRef.current.segments)
+    setProgress(0)
+    lastTsRef.current = null
+    setIsPlaying(true)
+  }
+
   // Auto-play preview when switching scripts
   useEffect(() => {
     if (runResult.segments.length > 0) {
@@ -194,12 +202,10 @@ export default function App(props: AppProps) {
     monacoRef.current = monaco
 
     // Add Ctrl+Enter keyboard shortcut to run preview
-    editor.addCommand(monaco.KeyMod.CtrlCmd | monaco.KeyCode.Enter, () => {
-      setActiveSegments(runResultRef.current.segments)
-      setProgress(0)
-      lastTsRef.current = null
-      setIsPlaying(true)
-    })
+    editor.addCommand(monaco.KeyMod.CtrlCmd | monaco.KeyCode.Enter, startPreviewFromRef)
+
+    // Add Ctrl+S keyboard shortcut to run preview (same as Ctrl+Enter)
+    editor.addCommand(monaco.KeyMod.CtrlCmd | monaco.KeyCode.KeyS, startPreviewFromRef)
   }
 
   const handleSettingsOpen = () => setSettingsOpen(true)
@@ -211,12 +217,7 @@ export default function App(props: AppProps) {
     // Update preview if it was already showing
     if (activeSegments.length > 0) {
       // Wait for next render cycle after settings reload
-      setTimeout(() => {
-        setActiveSegments(runResultRef.current.segments)
-        setProgress(0)
-        lastTsRef.current = null
-        setIsPlaying(true)
-      }, 0)
+      setTimeout(startPreviewFromRef, 0)
     }
   }
   

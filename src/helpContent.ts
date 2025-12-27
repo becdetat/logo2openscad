@@ -410,13 +410,13 @@ FD :height
 
 ## Keyboard Shortcuts
 
-- **Ctrl+Enter** (or Cmd+Enter): Run the preview animation
+- **Ctrl+Enter** or **Ctrl+S** (Cmd+Enter or Cmd+S on Mac): Run the preview animation
 
 ---
 
 ## Tips
 
-1. **Preview Animation**: The preview updates only when you click Play or press Ctrl+Enter, not on every edit
+1. **Preview Animation**: The preview updates only when you click Play or press Ctrl+Enter or Ctrl+S, not on every edit
 2. **Error Handling**: Invalid commands are skipped and reported in the error panel
 3. **Comments in Output**: Comments from your script are preserved in the OpenSCAD output
 4. **Arc Resolution**: Use EXTSETFN to control the smoothness of arcs and circles

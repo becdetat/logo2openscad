@@ -43,7 +43,7 @@ export function LogoEditor(props: LogoEditorProps) {
                             <Edit fontSize="small" />
                         </IconButton>
                     </Typography>
-                    <small><kbd>Ctrl</kbd>+<kbd>Enter</kbd> to preview</small>
+                    <small><kbd>Ctrl</kbd>+<kbd>Enter</kbd> or <kbd>Ctrl</kbd>+<kbd>S</kbd> to preview</small>
                     <IconButton aria-label="Help" onClick={props.onHelpOpen} size="small">
                         <HelpOutlineIcon fontSize="small" />
                     </IconButton>
