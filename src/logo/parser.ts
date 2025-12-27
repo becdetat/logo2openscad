@@ -73,7 +73,34 @@ export function parseLogo(source: string): ParseResult {
       processedSource.slice(startPos + commentText.length)
   }
 
-  // Second pass: normalize multi-line REPEAT commands by replacing newlines inside brackets with spaces
+  // Second pass: extract inline comments (// and #) and remove them from source
+  const sourceLines = processedSource.split(/\r?\n/)
+  const processedLines: string[] = []
+  for (let i = 0; i < sourceLines.length; i++) {
+    const line = sourceLines[i]
+    const lineNumber = i + 1
+    
+    const hashIdx = line.indexOf('#')
+    const slashIdx = line.indexOf('//')
+    let commentStart = -1
+    if (hashIdx >= 0) commentStart = hashIdx
+    if (slashIdx >= 0 && (commentStart === -1 || slashIdx < commentStart)) {
+      commentStart = slashIdx
+    }
+    
+    if (commentStart >= 0) {
+      const commentText = line.slice(commentStart).trim()
+      if (commentText.length > 0) {
+        comments.push({ text: commentText, line: lineNumber })
+      }
+      processedLines.push(line.slice(0, commentStart))
+    } else {
+      processedLines.push(line)
+    }
+  }
+  processedSource = processedLines.join('\n')
+
+  // Third pass: normalize multi-line REPEAT commands by replacing newlines inside brackets with spaces
   let normalizedSource = ''
   let bracketDepth = 0
   let inRepeat = false
@@ -108,28 +135,7 @@ export function parseLogo(source: string): ParseResult {
   for (let i = 0; i < lines.length; i++) {
     const lineNumber = i + 1
     const line = lines[i]
-
-    const hashIdx = line.indexOf('#')
-    const slashIdx = line.indexOf('//')
-    let cut = line.length
-    let commentStart = -1
-    if (hashIdx >= 0) {
-      cut = Math.min(cut, hashIdx)
-      commentStart = hashIdx
-    }
-    if (slashIdx >= 0 && (commentStart === -1 || slashIdx < commentStart)) {
-      cut = Math.min(cut, slashIdx)
-      commentStart = slashIdx
-    }
-    const content = line.slice(0, cut)
-
-    // Extract comment if present
-    if (commentStart >= 0) {
-      const commentText = line.slice(commentStart).trim()
-      if (commentText.length > 0) {
-        comments.push({ text: commentText, line: lineNumber })
-      }
-    }
+    const content = line
 
     let segStart = 0
     while (segStart <= content.length) {

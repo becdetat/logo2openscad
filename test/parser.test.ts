@@ -106,6 +106,24 @@ describe('parser', () => {
       const result = parseLogo('FD 10\n# Comment on line 2\nFD 20')
       expect(result.comments[0].line).toBe(2)
     })
+
+    it('should handle inline comments inside repeat blocks', () => {
+      const code = `repeat 3 [
+    repeat 4 [
+        pd
+        arc 360, 3
+        pu
+        fd 10   // adjust to suit
+    ]
+    fd 1.5
+]`
+      const result = parseLogo(code)
+      expect(result.diagnostics).toHaveLength(0)
+      expect(result.commands).toHaveLength(1)
+      expect(result.commands[0].kind).toBe('REPEAT')
+      expect(result.comments).toHaveLength(1)
+      expect(result.comments[0].text).toBe('// adjust to suit')
+    })
   })
 
   describe('expressions', () => {
