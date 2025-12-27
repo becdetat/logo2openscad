@@ -164,6 +164,18 @@ export function parseLogo(source: string): ParseResult {
         const endCol = segEnd - trailingWs + 1
         const segRange = rangeForSegment(lineNumber, startCol, endCol)
 
+        // Check if this is a variable call (starts with :)
+        if (trimmed.startsWith(':')) {
+          const varName = trimmed.slice(1).toLowerCase()
+          if (!varName) {
+            diagnostics.push(diagnostic('Variable name cannot be empty', segRange))
+          } else {
+            commands.push({ kind: 'CALL', varName, sourceLine: lineNumber })
+          }
+          segStart = semiIdx >= 0 ? semiIdx + 1 : content.length + 1
+          continue
+        }
+
         const parts = trimmed.split(/\s+/)
         const cmdRaw = parts[0] ?? ''
         const cmdText = cmdRaw.toUpperCase()
@@ -197,7 +209,7 @@ export function parseLogo(source: string): ParseResult {
             }
           }
         } else if (kind === 'MAKE') {
-          // MAKE requires "varname expression
+          // MAKE requires "varname expression or "varname [instructionList]
           const argsText = trimmed.slice(cmdRaw.length).trim()
           
           if (!argsText.startsWith('"')) {
@@ -207,19 +219,29 @@ export function parseLogo(source: string): ParseResult {
             const spaceIdx = restText.search(/\s/)
             
             if (spaceIdx === -1) {
-              diagnostics.push(diagnostic('MAKE requires variable name and expression', segRange))
+              diagnostics.push(diagnostic('MAKE requires variable name and expression or instruction list', segRange))
             } else {
               const varName = restText.slice(0, spaceIdx).toLowerCase()
-              const exprText = restText.slice(spaceIdx).trim()
+              const valueText = restText.slice(spaceIdx).trim()
               
               if (!varName) {
                 diagnostics.push(diagnostic('Variable name cannot be empty', segRange))
-              } else if (!exprText) {
-                diagnostics.push(diagnostic('MAKE requires an expression', segRange))
+              } else if (!valueText) {
+                diagnostics.push(diagnostic('MAKE requires an expression or instruction list', segRange))
+              } else if (valueText.startsWith('[')) {
+                // Instruction list value
+                const bracketEnd = valueText.lastIndexOf(']')
+                if (bracketEnd === -1) {
+                  diagnostics.push(diagnostic('MAKE instruction list missing closing bracket ]', segRange))
+                } else {
+                  const instructionListValue = valueText.slice(1, bracketEnd)
+                  commands.push({ kind, varName, instructionListValue, sourceLine: lineNumber })
+                }
               } else {
-                const expr = parseExpression(exprText)
+                // Numeric expression value
+                const expr = parseExpression(valueText)
                 if (!expr) {
-                  diagnostics.push(diagnostic(`Invalid expression: ${exprText}`, segRange))
+                  diagnostics.push(diagnostic(`Invalid expression: ${valueText}`, segRange))
                 } else {
                   commands.push({ kind, varName, value: expr, sourceLine: lineNumber })
                 }
@@ -417,12 +439,35 @@ export function parseLogo(source: string): ParseResult {
             }
           }
         } else if (kind === 'REPEAT') {
-          // REPEAT requires num [instructionlist]
+          // REPEAT requires num [instructionlist] or num :variable
           const argsText = trimmed.slice(cmdRaw.length).trim()
           const bracketStart = argsText.indexOf('[')
           
-          if (bracketStart === -1) {
-            diagnostics.push(diagnostic('REPEAT requires instruction list in brackets: REPEAT num [instructions]', segRange))
+          // Check if using variable reference (starts with :)
+          if (bracketStart === -1 && argsText.includes(':')) {
+            // REPEAT num :variable
+            const parts = argsText.split(/\s+/)
+            if (parts.length < 2) {
+              diagnostics.push(diagnostic('REPEAT requires count and instruction list or variable', segRange))
+            } else {
+              const countText = parts[0]
+              const varRef = parts[1]
+              
+              if (!varRef.startsWith(':')) {
+                diagnostics.push(diagnostic('REPEAT instruction list variable must start with : (e.g., :instructions)', segRange))
+              } else {
+                const countExpr = parseExpression(countText)
+                if (!countExpr) {
+                  diagnostics.push(diagnostic(`Invalid count expression: ${countText}`, segRange))
+                } else {
+                  const varName = varRef.slice(1).toLowerCase()
+                  // Store variable reference as special marker in instructionList field
+                  commands.push({ kind, value: countExpr, instructionList: `:${varName}`, sourceLine: lineNumber })
+                }
+              }
+            }
+          } else if (bracketStart === -1) {
+            diagnostics.push(diagnostic('REPEAT requires instruction list in brackets: REPEAT num [instructions] or REPEAT num :variable', segRange))
           } else {
             const bracketEnd = argsText.lastIndexOf(']')
             if (bracketEnd === -1 || bracketEnd < bracketStart) {

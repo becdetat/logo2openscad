@@ -235,7 +235,48 @@ describe('interpreter', () => {
       
       expect(result.segments[0].to.y).toBeCloseTo(100)
     })
-  })
+    it('should store instruction list in variable', () => {
+      const { commands } = parseLogo('MAKE "instructions [FD 10]\nREPEAT 2 :instructions')
+      const result = executeLogo(commands, [])
+      
+      expect(result.segments.length).toBe(2)
+      expect(result.segments[0].to.y).toBeCloseTo(10)
+      expect(result.segments[1].to.y).toBeCloseTo(20)
+    })
+
+    it('should execute instruction list variable directly', () => {
+      const { commands } = parseLogo('MAKE "square [REPEAT 4 [FD 10; RT 90]]\n:square')
+      const result = executeLogo(commands, [])
+      
+      expect(result.segments.length).toBe(4)
+      expect(result.segments[0].to.y).toBeCloseTo(10)
+      expect(result.segments[3].to.x).toBeCloseTo(0)
+    })
+
+    it('should allow calling instruction list multiple times', () => {
+      const { commands } = parseLogo('MAKE "move [FD 10]\n:move\nFD 5\n:move')
+      const result = executeLogo(commands, [])
+      
+      expect(result.segments.length).toBe(3)
+      expect(result.segments[0].to.y).toBeCloseTo(10)
+      expect(result.segments[1].to.y).toBeCloseTo(15)
+      expect(result.segments[2].to.y).toBeCloseTo(25)
+    })
+
+    it('should error when using instruction list in numeric expression', () => {
+      const { commands } = parseLogo('MAKE "list [FD 10]\nFD :list')
+      expect(() => executeLogo(commands, [])).toThrow(/not.*numeric expression/)
+    })
+
+    it('should error when using numeric variable as instruction list', () => {
+      const { commands } = parseLogo('MAKE "num 10\nREPEAT 2 :num')
+      expect(() => executeLogo(commands, [])).toThrow(/not an instruction list/)
+    })
+
+    it('should error when calling undefined variable', () => {
+      const { commands } = parseLogo(':undefined')
+      expect(() => executeLogo(commands, [])).toThrow(/Undefined variable/)
+    })  })
 
   describe('REPEAT command', () => {
     it('should execute commands in loop', () => {

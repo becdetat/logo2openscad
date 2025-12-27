@@ -35,7 +35,8 @@ function tokenize(input: string): string[] {
 }
 
 // Variable context for evaluation
-export type VariableContext = Map<string, number>
+export type VariableValue = number | { type: 'instructionList'; value: string }
+export type VariableContext = Map<string, VariableValue>
 
 // Parse expression with proper precedence
 export function parseExpression(input: string): Expression | null {
@@ -180,7 +181,11 @@ export function evaluateExpression(expr: Expression, variables: VariableContext 
       if (value === undefined) {
         throw new Error(`Undefined variable: ${expr.name}`)
       }
-      return value
+      if (typeof value === 'object' && value.type === 'instructionList') {
+        throw new Error(`Cannot use instruction list variable :${expr.name} in numeric expression`)
+      }
+      // TypeScript now knows value is a number
+      return value as number
     }
     
     case 'function': {

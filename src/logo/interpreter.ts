@@ -118,9 +118,15 @@ export function executeLogo(
 
     switch (cmd.kind) {
       case 'MAKE': {
-        if (cmd.varName && cmd.value) {
-          const value = evaluateExpression(cmd.value, variables)
-          variables.set(cmd.varName, value)
+        if (cmd.varName) {
+          if (cmd.instructionListValue !== undefined) {
+            // Store instruction list
+            variables.set(cmd.varName, { type: 'instructionList', value: cmd.instructionListValue })
+          } else if (cmd.value) {
+            // Store numeric value
+            const value = evaluateExpression(cmd.value, variables)
+            variables.set(cmd.varName, value)
+          }
         }
         break
       }
@@ -354,11 +360,44 @@ export function executeLogo(
         if (cmd.value && cmd.instructionList !== undefined) {
           const count = Math.floor(evaluateExpression(cmd.value, variables))
           if (count > 0) {
-            const repeatResult = parseLogo(cmd.instructionList)
+            let instructionListText = cmd.instructionList
+            
+            // Check if it's a variable reference (starts with :)
+            if (instructionListText.startsWith(':')) {
+              const varName = instructionListText.slice(1)
+              const varValue = variables.get(varName)
+              
+              if (varValue === undefined) {
+                throw new Error(`Undefined variable: ${varName}`)
+              }
+              if (typeof varValue !== 'object' || varValue.type !== 'instructionList') {
+                throw new Error(`Variable :${varName} is not an instruction list`)
+              }
+              instructionListText = varValue.value
+            }
+            
+            const repeatResult = parseLogo(instructionListText)
             for (let i = 0; i < count; i++) {
               executeCommands(repeatResult.commands)
             }
           }
+        }
+        break
+      }
+      case 'CALL': {
+        // Execute instruction list stored in variable
+        if (cmd.varName) {
+          const varValue = variables.get(cmd.varName)
+          
+          if (varValue === undefined) {
+            throw new Error(`Undefined variable: ${cmd.varName}`)
+          }
+          if (typeof varValue !== 'object' || varValue.type !== 'instructionList') {
+            throw new Error(`Variable :${cmd.varName} is not an instruction list`)
+          }
+          
+          const callResult = parseLogo(varValue.value)
+          executeCommands(callResult.commands)
         }
         break
       }

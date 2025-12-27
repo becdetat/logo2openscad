@@ -147,32 +147,58 @@ Arc resolution can be controlled with the EXTSETFN command (see Extension Comman
 
 ## Variables
 
-### MAKE \`"varname\` \`expression\`
+### MAKE \`"varname\` \`expression\` or \`[instructionlist]\`
 Define or update a variable. Variable names must be prefixed with \`"\` when defining.
+Variables can store either numeric values or instruction lists (commands in square brackets).
 
 \`\`\`logo
+// Numeric variables
 MAKE "size 100
 MAKE "half :size / 2
+
+// Instruction list variables (like subroutines/macros)
+MAKE "square [REPEAT 4 [FD 50; RT 90]]
+MAKE "step [FD 10; RT 90]
 \`\`\`
 
 ### Variable References
 Use \`:varname\` to reference a variable's value (note the colon prefix).
 
+For numeric variables, use in expressions:
 \`\`\`logo
 MAKE "len 50
 FD :len         // Use the variable
 MAKE "double :len * 2
 \`\`\`
 
+For instruction list variables, call them directly or use in REPEAT:
+\`\`\`logo
+// Define reusable instruction sequences
+MAKE "instructions [LT 90; FD 10]
+
+// Call directly (like a subroutine)
+:instructions
+
+// Use in REPEAT
+REPEAT 4 :instructions
+
+// More complex example
+MAKE "square [REPEAT 4 [FD 50; RT 90]]
+:square         // Draw first square
+FD 20
+:square         // Draw second square
+\`\`\`
+
 ---
 
 ## Control Flow
 
-### REPEAT \`count\` \`[instructionlist]\`
-Execute the instruction list a specified number of times. Instructions must be enclosed in square brackets.
+### REPEAT \`count\` \`[instructionlist]\` or \`count\` \`:variable\`
+Execute the instruction list a specified number of times. Instructions can be inline in square brackets
+or stored in a variable.
 
 \`\`\`logo
-// Draw a square
+// Inline instruction list
 REPEAT 4 [FD 50; RT 90]
 
 // Multi-line format
@@ -184,6 +210,10 @@ REPEAT 5 [
 // With variables
 MAKE "sides 6
 REPEAT :sides [FD 40; RT 360/:sides]
+
+// Using stored instruction list
+MAKE "step [FD 10; RT 90]
+REPEAT 4 :step
 \`\`\`
 
 ---

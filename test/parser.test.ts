@@ -168,6 +168,28 @@ describe('parser', () => {
       expect(result.commands[1].kind).toBe('FD')
     })
 
+    it('should parse MAKE with instruction list', () => {
+      const result = parseLogo('MAKE "instructions [FD 10; RT 90]')
+      expect(result.commands).toHaveLength(1)
+      expect(result.commands[0].kind).toBe('MAKE')
+      expect(result.commands[0].varName).toBe('instructions')
+      expect(result.commands[0].instructionListValue).toBe('FD 10; RT 90')
+      expect(result.diagnostics).toHaveLength(0)
+    })
+
+    it('should parse CALL command (variable as command)', () => {
+      const result = parseLogo(':square')
+      expect(result.commands).toHaveLength(1)
+      expect(result.commands[0].kind).toBe('CALL')
+      expect(result.commands[0].varName).toBe('square')
+      expect(result.diagnostics).toHaveLength(0)
+    })
+
+    it('should report error for empty variable name in CALL', () => {
+      const result = parseLogo(':')
+      expect(result.diagnostics.length).toBeGreaterThan(0)
+    })
+
     it('should report error for MAKE without quote', () => {
       const result = parseLogo('MAKE size 100')
       expect(result.diagnostics.length).toBeGreaterThan(0)
@@ -193,6 +215,19 @@ describe('parser', () => {
       const result = parseLogo('REPEAT 4 [\n  FD 10\n  RT 90\n]')
       expect(result.commands).toHaveLength(1)
       expect(result.commands[0].kind).toBe('REPEAT')
+    })
+
+    it('should parse REPEAT with variable reference', () => {
+      const result = parseLogo('REPEAT 4 :instructions')
+      expect(result.commands).toHaveLength(1)
+      expect(result.commands[0].kind).toBe('REPEAT')
+      expect(result.commands[0].instructionList).toBe(':instructions')
+      expect(result.diagnostics).toHaveLength(0)
+    })
+
+    it('should report error for REPEAT variable without colon', () => {
+      const result = parseLogo('REPEAT 4 instructions')
+      expect(result.diagnostics.length).toBeGreaterThan(0)
     })
   })
 
