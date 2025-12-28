@@ -1,4 +1,4 @@
-import { Button, Dialog, DialogActions, DialogContent, DialogTitle, IconButton, Slider, Stack, TextField, Typography } from "@mui/material";
+import { Button, Checkbox, Dialog, DialogActions, DialogContent, DialogTitle, FormControlLabel, IconButton, Slider, Stack, TextField, Typography } from "@mui/material";
 import RestartAltIcon from '@mui/icons-material/RestartAlt'
 import { useEffect, useState } from "react";
 import { useSettings, type Settings } from "../hooks/useSettings";
@@ -112,6 +112,25 @@ export function SettingsDialog(props: SettingsDialogProps) {
                         </Stack>
                         <Typography variant="caption" color="text.secondary">
                             Default: {DEFAULTS.indentSpaces}
+                        </Typography>
+                    </Stack>
+
+                    <Stack spacing={1}>
+                        <FormControlLabel
+                            control={
+                                <Checkbox
+                                    checked={localSettings.optimizeCircles}
+                                    onChange={(e) => setLocalSettings({ ...localSettings, optimizeCircles: e.target.checked })}
+                                />
+                            }
+                            label={
+                                <Typography variant="subtitle2">
+                                    Optimize 360° arcs to OpenSCAD <code>circle()</code> primitives
+                                </Typography>
+                            }
+                        />
+                        <Typography variant="caption" color="text.secondary">
+                            When enabled, 360° arcs are output as circle() commands instead of polygons with many points. Default: {DEFAULTS.optimizeCircles ? 'Enabled' : 'Disabled'}
                         </Typography>
                     </Stack>
                 </Stack>

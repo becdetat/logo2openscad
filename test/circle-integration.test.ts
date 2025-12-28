@@ -89,4 +89,27 @@ describe('360-degree arc to circle integration', () => {
     expect(polygons[0].circleGeometry).toBeDefined()
     expect(polygons[1].circleGeometry).toBeUndefined()
   })
+
+  it('should generate polygon when optimizeCircles is disabled', () => {
+    const script = 'ARC 360, 50'
+    const { commands, comments } = parseLogo(script)
+    const { polygons } = executeLogo(commands, comments)
+    const openscad = generateOpenScad(polygons, 2, false) // optimizeCircles = false
+    
+    // Should output as polygon, not circle
+    expect(openscad).toContain('polygon(points=[')
+    expect(openscad).not.toContain('circle(')
+    expect(polygons[0].circleGeometry).toBeDefined() // Circle geometry is still marked
+  })
+
+  it('should generate circle when optimizeCircles is enabled', () => {
+    const script = 'ARC 360, 50'
+    const { commands, comments } = parseLogo(script)
+    const { polygons } = executeLogo(commands, comments)
+    const openscad = generateOpenScad(polygons, 2, true) // optimizeCircles = true
+    
+    // Should output as circle
+    expect(openscad).toContain('circle(r=50, $fn=40)')
+    expect(openscad).not.toContain('polygon(')
+  })
 })
