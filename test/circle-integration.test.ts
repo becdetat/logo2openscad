@@ -78,4 +78,15 @@ describe('360-degree arc to circle integration', () => {
     expect(openscad).toContain('circle(r=25, $fn=40)')
     expect(openscad).toContain('translate([100, 0])')
   })
+
+  it('should not create duplicate polygons after 360-degree arc', () => {
+    const script = 'ARC 360, 25\nFD 50'
+    const { commands, comments } = parseLogo(script)
+    const { polygons } = executeLogo(commands, comments)
+    
+    // Should have 2 polygons: one circle, one for the line
+    expect(polygons.length).toBe(2)
+    expect(polygons[0].circleGeometry).toBeDefined()
+    expect(polygons[1].circleGeometry).toBeUndefined()
+  })
 })

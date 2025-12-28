@@ -244,6 +244,8 @@ export function executeLogo(
         }
         
         // If this is a 360-degree arc, finalize the polygon with circle geometry
+        // Note: We still store the arc points in the polygon for consistency with the preview
+        // system and debugging, even though they won't be used for OpenSCAD output
         if (is360Arc && penDown && currentPolygon) {
           collectCommentsSince(polygonStartLine, cmdLine)
           polygons.push({
