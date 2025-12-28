@@ -1,6 +1,8 @@
 import { describe, expect, it } from 'vitest'
 import { generateOpenScad } from '../src/logo/openscad'
 import type { LogoPolygon } from '../src/logo/types'
+import { parseLogo } from '../src/logo/parser'
+import { executeLogo } from '../src/logo/interpreter'
 
 describe('openscad', () => {
   describe('basic polygon generation', () => {
@@ -117,6 +119,16 @@ describe('openscad', () => {
       const result = generateOpenScad(polygons)
 
       expect(result).toContain('\n\n')
+    })
+
+    it('should generate separate polygons for multiple arcs', () => {
+      // This tests the issue where arc 45, 5; arc 45, 6 should generate two polygons
+      const { commands } = parseLogo('arc 45, 5\narc 45, 6')
+      const result = executeLogo(commands, [])
+      const openscad = generateOpenScad(result.polygons)
+
+      const polygonCount = (openscad.match(/polygon\(points=\[/g) || []).length
+      expect(polygonCount).toBe(2)
     })
   })
 
