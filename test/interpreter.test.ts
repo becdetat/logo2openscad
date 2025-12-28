@@ -221,6 +221,15 @@ describe('interpreter', () => {
       // Second arc
       expect(result.polygons[1].points.length).toBeGreaterThan(1)
     })
+
+    it('should allow mixing arcs with other drawing commands', () => {
+      // Arc, then pen up, then another arc
+      const { commands } = parseLogo('arc 45, 5\nPU\nFD 10\nPD\narc 45, 6')
+      const result = executeLogo(commands, [])
+      
+      // Should have 3 polygons: first arc, (PU creates a break), second arc
+      expect(result.polygons.length).toBe(2)
+    })
   })
 
   describe('expressions', () => {

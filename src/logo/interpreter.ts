@@ -243,20 +243,24 @@ export function executeLogo(
           }
         }
         
-        // If this is a 360-degree arc, finalize the polygon with circle geometry
+        // Finalize the polygon after each arc (both 360° and non-360°)
         // Note: We still store the arc points in the polygon for consistency with the preview
         // system and debugging, even though they won't be used for OpenSCAD output
-        if (is360Arc && penDown && currentPolygon) {
+        if (penDown && currentPolygon) {
           collectCommentsSince(polygonStartLine, cmdLine)
+          
+          // If this is a 360-degree arc, add circle geometry
+          const circleGeometry = is360Arc ? {
+            center: { x, y },
+            radius: radius,
+            fn: currentFn
+          } : undefined
+          
           polygons.push({
             points: currentPolygon,
             comments: currentPolygonComments,
             commentsByPointIndex: currentPolygonCommentsByPointIndex,
-            circleGeometry: {
-              center: { x, y },
-              radius: radius,
-              fn: currentFn
-            }
+            circleGeometry
           })
           
           // Reset for next polygon
