@@ -207,6 +207,42 @@ describe('interpreter', () => {
       expect(result.polygons.length).toBe(1)
       expect(result.polygons[0].circleGeometry).toBeUndefined()
     })
+
+    it('should generate separate polygons for multiple arcs', () => {
+      const { commands } = parseLogo('arc 45, 5\narc 45, 6')
+      const result = executeLogo(commands, [])
+      
+      // Each arc should generate its own polygon
+      expect(result.polygons.length).toBe(2)
+      
+      // First arc
+      expect(result.polygons[0].points.length).toBeGreaterThan(1)
+      
+      // Second arc
+      expect(result.polygons[1].points.length).toBeGreaterThan(1)
+    })
+
+    it('should not include center point in arc polygon', () => {
+      const { commands } = parseLogo('arc 45, 5')
+      const result = executeLogo(commands, [])
+      
+      expect(result.polygons.length).toBe(1)
+      const polygon = result.polygons[0]
+      
+      // The polygon should not start at [0, 0] (the center)
+      // All points should be on the arc, not at the center
+      const centerPoint = polygon.points.find(p => p.x === 0 && p.y === 0)
+      expect(centerPoint).toBeUndefined()
+    })
+
+    it('should allow mixing arcs with other drawing commands', () => {
+      // Arc, then pen up, then another arc
+      const { commands } = parseLogo('arc 45, 5\nPU\nFD 10\nPD\narc 45, 6')
+      const result = executeLogo(commands, [])
+      
+      // Should have 3 polygons: first arc, (PU creates a break), second arc
+      expect(result.polygons.length).toBe(2)
+    })
   })
 
   describe('expressions', () => {
