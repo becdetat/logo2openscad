@@ -1,17 +1,52 @@
-import { describe, expect, it, beforeEach, afterEach } from 'vitest'
+import { describe, expect, it, beforeEach, afterEach, beforeAll, vi } from 'vitest'
 import { renderHook, act } from '@testing-library/react'
 import { useWorkspace } from '../src/hooks/useWorkspace'
 
 const WORKSPACE_KEY = 'logo2openscad:workspace'
 const LEGACY_KEY = 'turtle2openscad:script'
 
+function createTestLocalStorage() {
+  const store = new Map<string, string>()
+
+  const storage = {
+    get length() {
+      return store.size
+    },
+    clear() {
+      store.clear()
+    },
+    getItem(key: string) {
+      return store.has(key) ? store.get(key)! : null
+    },
+    key(index: number) {
+      return Array.from(store.keys())[index] ?? null
+    },
+    removeItem(key: string) {
+      store.delete(key)
+    },
+    setItem(key: string, value: string) {
+      store.set(key, String(value))
+    },
+  }
+
+  return storage
+}
+
+function resetStorage() {
+  localStorage.clear()
+}
+
 describe('useWorkspace', () => {
+  beforeAll(() => {
+    vi.stubGlobal('localStorage', createTestLocalStorage())
+  })
+
   beforeEach(() => {
-    localStorage.clear()
+    resetStorage()
   })
 
   afterEach(() => {
-    localStorage.clear()
+    resetStorage()
   })
 
   describe('initialization', () => {
