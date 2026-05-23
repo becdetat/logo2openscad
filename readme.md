@@ -13,6 +13,33 @@ Client-side web app that converts a small Logo "turtle" script into OpenSCAD `po
 - **Multiple Polygons**: Supports via `PU`/`PD`
 - **Preview**: Pen-up travel is shown dashed in the preview
 
+## Self-hosting
+
+Create a `docker-compose.yml` file like below:
+
+```yml
+services:
+  logo2openscad:
+    image: ghcr.io/becdetat/logo2openscad:latest
+    container_name: logo2openscad
+    ports:
+      - 8080:80
+    restart: unless-stopped
+```
+
+Then start the container:
+
+```sh
+docker compose up -d
+```
+
+To upgrade, pull then re-up:
+
+```sh
+docker compose pull
+docker compose up -d
+```
+
 ## Logo language
 
 Only a very small, mangled subset of the [Berkeley Logo](https://people.eecs.berkeley.edu/~bh/usermanual) dialect is included, concentrating on commands and syntax that support drawing (turtle commands).

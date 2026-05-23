@@ -1,7 +1,0 @@
-services:
-  logo2openscad:
-    image: becdetat/logo2openscad:latest
-    container_name: logo2openscad
-    ports:
-      - 8080:80
-    restart: unless-stopped
