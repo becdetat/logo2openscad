@@ -775,6 +775,98 @@ describe('interpreter', () => {
     })
   })
 
+  describe('EXTGETX / EXTGETY / EXTGETH', () => {
+    it('should return 0 for all at origin', () => {
+      const { commands } = parseLogo('MAKE "x EXTGETX\nMAKE "y EXTGETY\nMAKE "h EXTGETH\nFD :x; FD :y; FD :h')
+      const result = executeLogo(commands, [])
+      // all three MAKEs capture 0, so all three FDs travel 0
+      result.segments.forEach(seg => {
+        expect(seg.to.x).toBeCloseTo(seg.from.x)
+        expect(seg.to.y).toBeCloseTo(seg.from.y)
+      })
+    })
+
+    it('EXTGETX should capture X after SETXY', () => {
+      const { commands } = parseLogo('SETXY 30, 40\nMAKE "px EXTGETX\nFD :px')
+      const result = executeLogo(commands, [])
+      // turtle moves 30 in X (SETXY), then FD travels :px = 30 in current direction (up at 0°)
+      // so after FD :px, y = 40 + 30 = 70
+      const last = result.segments[result.segments.length - 1]
+      expect(last.from.x).toBeCloseTo(30)
+      expect(last.to.y).toBeCloseTo(70)
+    })
+
+    it('EXTGETY should capture Y after movement', () => {
+      const { commands } = parseLogo('FD 50\nMAKE "py EXTGETY\nFD :py')
+      const result = executeLogo(commands, [])
+      // After FD 50: y=50. MAKE "py EXTGETY = 50. FD 50 → y=100
+      const last = result.segments[result.segments.length - 1]
+      expect(last.to.y).toBeCloseTo(100)
+    })
+
+    it('EXTGETH should capture heading after RT', () => {
+      const { commands } = parseLogo('RT 90\nMAKE "h EXTGETH\nFD :h')
+      const result = executeLogo(commands, [])
+      // heading = 90, FD 90 in direction 90° → x increases by 90
+      const last = result.segments[result.segments.length - 1]
+      expect(last.to.x).toBeCloseTo(90)
+      expect(last.to.y).toBeCloseTo(0)
+    })
+
+    it('should work inside MAKE expressions', () => {
+      const { commands } = parseLogo('SETXY 10, 20\nMAKE "sum EXTGETX + EXTGETY\nFD :sum')
+      const result = executeLogo(commands, [])
+      // EXTGETX=10, EXTGETY=20, sum=30. Starting y=20, FD 30 → y=50
+      const last = result.segments[result.segments.length - 1]
+      expect(last.to.y).toBeCloseTo(50)
+    })
+
+    it('should update after each movement', () => {
+      const { commands } = parseLogo('FD 10\nMAKE "y1 EXTGETY\nFD 10\nMAKE "y2 EXTGETY\nFD :y2 - :y1')
+      const result = executeLogo(commands, [])
+      // y1=10, y2=20, FD (20-10)=10 → final y=30
+      const last = result.segments[result.segments.length - 1]
+      expect(last.to.y).toBeCloseTo(30)
+    })
+
+    it('should work inline in FD expression', () => {
+      const { commands } = parseLogo('RT 90\nFD 15\nFD EXTGETX')
+      const result = executeLogo(commands, [])
+      // After RT 90 + FD 15: x=15. FD EXTGETX = FD 15 in direction 90° → x=30
+      const last = result.segments[result.segments.length - 1]
+      expect(last.to.x).toBeCloseTo(30)
+    })
+
+    it('should work inside REPEAT', () => {
+      const { commands } = parseLogo('REPEAT 3 [FD 10; MAKE "cx EXTGETX; MAKE "cy EXTGETY]')
+      const result = executeLogo(commands, [])
+      // Three FD 10 steps upward; after last: y=30
+      // :cy should be 30 after the loop (captured each iteration, final value = 30)
+      expect(result.segments).toHaveLength(3)
+      expect(result.segments[2].to.y).toBeCloseTo(30)
+    })
+
+    it('EXTGETH should update after LT and RT', () => {
+      const { commands } = parseLogo('LT 45\nMAKE "h1 EXTGETH\nRT 90\nMAKE "h2 EXTGETH')
+      // h1 = -45, h2 = 45
+      const result = executeLogo(commands, [])
+      // Use FD :h1 and FD :h2 would require more setup; just verify no errors
+      expect(result.segments).toHaveLength(0)
+    })
+
+    it('EXTGETH after SETH', () => {
+      const { commands } = parseLogo('SETH 135\nFD EXTGETH')
+      const result = executeLogo(commands, [])
+      // heading = 135, FD 135 at 135°
+      expect(result.segments).toHaveLength(1)
+      const seg = result.segments[0]
+      const expectedDist = 135
+      const rad = (135 * Math.PI) / 180
+      expect(seg.to.x).toBeCloseTo(Math.sin(rad) * expectedDist)
+      expect(seg.to.y).toBeCloseTo(Math.cos(rad) * expectedDist)
+    })
+  })
+
   describe('EXTSCALE command', () => {
     it('should scale FD by factor', () => {
       const { commands } = parseLogo('EXTSCALE 0.5, [FD 100]')

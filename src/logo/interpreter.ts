@@ -45,6 +45,13 @@ function collectControlPoints(
   let distanceScale = initialDistanceScale
   const localVars: VariableContext = new Map(variables)
 
+  const syncLocalVars = () => {
+    localVars.set('__extgetx', x)
+    localVars.set('__extgety', y)
+    localVars.set('__extgeth', headingDeg)
+  }
+  syncLocalVars()
+
   const processCmd = (cmd: LogoCommand): void => {
     switch (cmd.kind) {
       case 'EXTDEFCONTROLPOINT':
@@ -57,31 +64,39 @@ function collectControlPoints(
         const rad = degToRad(headingDeg)
         x += Math.sin(rad) * dist
         y += Math.cos(rad) * dist
+        syncLocalVars()
         break
       }
       case 'LT':
         headingDeg -= cmd.value ? evaluateExpression(cmd.value, localVars) : 0
+        syncLocalVars()
         break
       case 'RT':
         headingDeg += cmd.value ? evaluateExpression(cmd.value, localVars) : 0
+        syncLocalVars()
         break
       case 'SETH':
         headingDeg = cmd.value ? evaluateExpression(cmd.value, localVars) : 0
+        syncLocalVars()
         break
       case 'HOME':
         x = 0
         y = 0
         headingDeg = 0
+        syncLocalVars()
         break
       case 'SETX':
         x = cmd.value ? evaluateExpression(cmd.value, localVars) : 0
+        syncLocalVars()
         break
       case 'SETY':
         y = cmd.value ? evaluateExpression(cmd.value, localVars) : 0
+        syncLocalVars()
         break
       case 'SETXY':
         x = cmd.value ? evaluateExpression(cmd.value, localVars) : 0
         y = cmd.value2 ? evaluateExpression(cmd.value2, localVars) : 0
+        syncLocalVars()
         break
       case 'MAKE':
         if (cmd.varName) {
@@ -174,6 +189,14 @@ export function executeLogo(
   let arcGroupId = 0
   let currentFn = 40 // Default FN value (40/4 = 10 segments per 90°)
   let distanceScale = 1
+
+  // Keep EXTGETX/EXTGETY/EXTGETH available in every expression
+  const syncStateVars = () => {
+    variables.set('__extgetx', x)
+    variables.set('__extgety', y)
+    variables.set('__extgeth', headingDeg)
+  }
+  syncStateVars()
 
   let currentPolygon: Point[] | null = [{ x, y }]
   let currentPolygonComments: LogoComment[] = []
@@ -276,12 +299,15 @@ export function executeLogo(
       }
       case 'LT':
         headingDeg -= cmd.value ? evaluateExpression(cmd.value, variables) : 0
+        syncStateVars()
         break
       case 'RT':
         headingDeg += cmd.value ? evaluateExpression(cmd.value, variables) : 0
+        syncStateVars()
         break
       case 'SETH':
         headingDeg = cmd.value ? evaluateExpression(cmd.value, variables) : 0
+        syncStateVars()
         break
       case 'PU':
         if (penDown) {
@@ -306,6 +332,7 @@ export function executeLogo(
         const nx = cmd.value ? evaluateExpression(cmd.value, variables) : 0
         segments.push(createSegment({ x, y }, { x: nx, y }, penDown, cmdLine))
         x = nx
+        syncStateVars()
         if (penDown) {
           ensurePolygonStarted()
           currentPolygon!.push({ x, y })
@@ -316,6 +343,7 @@ export function executeLogo(
         const ny = cmd.value ? evaluateExpression(cmd.value, variables) : 0
         segments.push(createSegment({ x, y }, { x, y: ny }, penDown, cmdLine))
         y = ny
+        syncStateVars()
         if (penDown) {
           ensurePolygonStarted()
           currentPolygon!.push({ x, y })
@@ -328,6 +356,7 @@ export function executeLogo(
         segments.push(createSegment({ x, y }, { x: nx, y: ny }, penDown, cmdLine))
         x = nx
         y = ny
+        syncStateVars()
         if (penDown) {
           ensurePolygonStarted()
           currentPolygon!.push({ x, y })
@@ -346,6 +375,7 @@ export function executeLogo(
 
         x = nx
         y = ny
+        syncStateVars()
 
         if (penDown) {
           ensurePolygonStarted()
@@ -440,6 +470,7 @@ export function executeLogo(
         x = 0
         y = 0
         headingDeg = 0
+        syncStateVars()
 
         if (penDown) {
           ensurePolygonStarted()
@@ -488,6 +519,7 @@ export function executeLogo(
           x = finalX
           y = finalY
           headingDeg = finalHeadingDeg
+          syncStateVars()
         }
         break
       }

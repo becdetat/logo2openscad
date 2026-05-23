@@ -486,6 +486,41 @@ describe('parser', () => {
     })
   })
 
+  describe('EXTGETX / EXTGETY / EXTGETH', () => {
+    it('should parse EXTGETX in a MAKE expression', () => {
+      const result = parseLogo('MAKE "px EXTGETX')
+      expect(result.commands).toHaveLength(1)
+      expect(result.commands[0].kind).toBe('MAKE')
+      expect(result.commands[0].value).toBeDefined()
+      expect(result.diagnostics).toHaveLength(0)
+    })
+
+    it('should parse EXTGETY in a MAKE expression', () => {
+      const result = parseLogo('MAKE "py EXTGETY')
+      expect(result.commands).toHaveLength(1)
+      expect(result.diagnostics).toHaveLength(0)
+    })
+
+    it('should parse EXTGETH in a MAKE expression', () => {
+      const result = parseLogo('MAKE "ph EXTGETH')
+      expect(result.commands).toHaveLength(1)
+      expect(result.diagnostics).toHaveLength(0)
+    })
+
+    it('should parse EXTGETX in an FD expression', () => {
+      const result = parseLogo('FD EXTGETX + 5')
+      expect(result.commands).toHaveLength(1)
+      expect(result.commands[0].kind).toBe('FD')
+      expect(result.diagnostics).toHaveLength(0)
+    })
+
+    it('should parse combined EXTGETX + EXTGETY', () => {
+      const result = parseLogo('MAKE "sum EXTGETX + EXTGETY')
+      expect(result.commands).toHaveLength(1)
+      expect(result.diagnostics).toHaveLength(0)
+    })
+  })
+
   describe('EXTSCALE command', () => {
     it('should parse EXTSCALE with inline instruction list', () => {
       const result = parseLogo('EXTSCALE 0.5, [FD 100]')

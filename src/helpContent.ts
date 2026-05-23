@@ -424,6 +424,31 @@ Record the turtle's current position as a Bézier control point within an \`EXTB
 
 ---
 
+### EXTGETX / EXTGETY / EXTGETH
+Return the turtle's current X position, Y position, or heading (in degrees) as a numeric value. Use them directly in any expression — no colon prefix, no argument.
+
+\`\`\`logo
+// Capture current position
+MAKE "pinx EXTGETX
+MAKE "piny EXTGETY
+MAKE "pinh EXTGETH
+
+// Use in arithmetic
+FD 100
+RT 90
+FD EXTGETX * 0.5     // half of current X
+
+// Return to a saved position
+MAKE "startx EXTGETX
+MAKE "starty EXTGETY
+FD 50; RT 90; FD 50
+PU
+SETXY :startx, :starty
+PD
+\`\`\`
+
+---
+
 ### EXTSCALE \`factor\`, \`[instructionlist]\` or \`factor\`, \`:variable\`
 Execute an instruction list with all \`FD\` and \`BK\` distances multiplied by the given scale factor. Useful for reusing shapes at different sizes without redefining them.
 

@@ -140,6 +140,21 @@ function parseAtom(state: ParseState): Expression {
   
   // Check for function call (e.g., SQRT, LN, EXP, LOG10)
   const upperToken = token.toUpperCase()
+
+  // Zero-argument state functions — resolved at eval time via reserved variable names
+  if (upperToken === 'EXTGETX') {
+    consume(state)
+    return { type: 'variable', name: '__extgetx' }
+  }
+  if (upperToken === 'EXTGETY') {
+    consume(state)
+    return { type: 'variable', name: '__extgety' }
+  }
+  if (upperToken === 'EXTGETH') {
+    consume(state)
+    return { type: 'variable', name: '__extgeth' }
+  }
+
   if (upperToken === 'SQRT') {
     consume(state)
     const arg = parseUnary(state)

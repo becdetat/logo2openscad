@@ -1,4 +1,4 @@
-# Add a new command `EXTBEZIERCURVE ` that takes a set of instructions and `EXTDEFCONTROLPOINT` commands that define control points and draws a Bezier curve using the points.
+# Add a new command `EXTBEZIERCURVE` that takes a set of instructions and `EXTDEFCONTROLPOINT` commands that define control points and draws a Bezier curve using the points.
 
 https://github.com/becdetat/logo2openscad/issues/52
 
