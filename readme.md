@@ -167,35 +167,29 @@ docker run --rm -p 8080:80 logo2openscad:local
 
 Then open `http://localhost:8080`.
 
-### Build + push to Docker Hub
+### Publish to GHCR
 
-1) Tag a new release in Git
+Push a semantic version tag with a leading `v`:
+
 ```pwsh
-git tag 0.6.0
-git push origin 0.6.0
+git tag v0.10.0
+git push origin v0.10.0
 ```
 
-2) Docker log in, build + tag:
-```pwsh
-docker login
-docker build -t "becdetat/logo2openscad:0.6.0" .
-docker tag "becdetat/logo2openscad:0.6.0" "becdetat/logo2openscad:latest"
-```
+GitHub Actions will build the root `Dockerfile` and push these tags to GHCR:
 
-3) Push:
-```pwsh
-docker push "becdetat/logo2openscad:0.6.0"
-docker push "becdetat/logo2openscad:latest"
-```
+- `ghcr.io/becdetat/logo2openscad:0.10.0`
+- `ghcr.io/becdetat/logo2openscad:0.10`
+- `ghcr.io/becdetat/logo2openscad:latest`
 
-4) Create new release in Github
+The workflow uses the built-in `GITHUB_TOKEN`, so the repository needs permission to publish packages to GitHub Container Registry.
 
 
 ## Example Docker Compose
 ```yml
 services:
   logo2openscad:
-    image: becdetat/logo2openscad:latest
+    image: ghcr.io/becdetat/logo2openscad:latest
     container_name: logo2openscad
     ports:
       - 8080:80
