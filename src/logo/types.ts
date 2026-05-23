@@ -6,7 +6,7 @@ export type Expression =
   | { type: 'variable'; name: string }
   | { type: 'function'; name: string; arg: Expression }
 
-export type LogoCommandKind = 'FD' | 'BK' | 'LT' | 'RT' | 'PU' | 'PD' | 'ARC' | 'SETX' | 'SETY' | 'SETXY' | 'SETH' | "HOME" | 'MAKE' | 'REPEAT' | 'EXTCOMMENTPOS' | 'EXTSETFN' | 'PRINT' | 'EXTMARKER' | 'CALL' | 'EXTBEZIERCURVE' | 'EXTDEFCONTROLPOINT'
+export type LogoCommandKind = 'FD' | 'BK' | 'LT' | 'RT' | 'PU' | 'PD' | 'ARC' | 'SETX' | 'SETY' | 'SETXY' | 'SETH' | "HOME" | 'MAKE' | 'REPEAT' | 'EXTCOMMENTPOS' | 'EXTSETFN' | 'PRINT' | 'EXTMARKER' | 'CALL' | 'EXTBEZIERCURVE' | 'EXTDEFCONTROLPOINT' | 'EXTSCALE'
 
 export type SourceRange = {
   startLine: number

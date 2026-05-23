@@ -774,5 +774,86 @@ describe('interpreter', () => {
       expect(commentsAtPoint![0].text).toBe('// x^2 = 100')
     })
   })
+
+  describe('EXTSCALE command', () => {
+    it('should scale FD by factor', () => {
+      const { commands } = parseLogo('EXTSCALE 0.5, [FD 100]')
+      const result = executeLogo(commands, [])
+
+      expect(result.segments).toHaveLength(1)
+      expect(result.segments[0].to.y).toBeCloseTo(50)
+    })
+
+    it('should scale BK by factor', () => {
+      const { commands } = parseLogo('EXTSCALE 2, [BK 10]')
+      const result = executeLogo(commands, [])
+
+      expect(result.segments).toHaveLength(1)
+      expect(result.segments[0].to.y).toBeCloseTo(-20)
+    })
+
+    it('should not affect RT or LT', () => {
+      const { commands } = parseLogo('EXTSCALE 2, [RT 90; FD 10]')
+      const result = executeLogo(commands, [])
+
+      expect(result.segments[0].to.x).toBeCloseTo(20)
+      expect(result.segments[0].to.y).toBeCloseTo(0)
+    })
+
+    it('should scale a stored instruction list', () => {
+      const { commands } = parseLogo('MAKE "square [REPEAT 4 [FD 10; RT 90]]\nEXTSCALE 0.8, :square')
+      const result = executeLogo(commands, [])
+
+      expect(result.segments).toHaveLength(4)
+      // First FD should travel 8 (10 * 0.8)
+      expect(result.segments[0].to.y).toBeCloseTo(8)
+    })
+
+    it('should restore scale after execution', () => {
+      const { commands } = parseLogo('EXTSCALE 2, [FD 10]\nFD 10')
+      const result = executeLogo(commands, [])
+
+      expect(result.segments).toHaveLength(2)
+      expect(result.segments[0].to.y).toBeCloseTo(20)
+      // Second FD should use normal scale
+      expect(result.segments[1].to.y).toBeCloseTo(30)
+    })
+
+    it('should support nested EXTSCALE (multiplicative)', () => {
+      const { commands } = parseLogo('EXTSCALE 2, [EXTSCALE 3, [FD 10]]')
+      const result = executeLogo(commands, [])
+
+      expect(result.segments).toHaveLength(1)
+      expect(result.segments[0].to.y).toBeCloseTo(60)
+    })
+
+    it('should accept expression as scale factor', () => {
+      const { commands } = parseLogo('MAKE "s 0.5\nEXTSCALE :s * 2, [FD 10]')
+      const result = executeLogo(commands, [])
+
+      expect(result.segments).toHaveLength(1)
+      expect(result.segments[0].to.y).toBeCloseTo(10)
+    })
+
+    it('should work with REPEAT inside instruction list', () => {
+      const { commands } = parseLogo('EXTSCALE 0.5, [REPEAT 4 [FD 10; RT 90]]')
+      const result = executeLogo(commands, [])
+
+      expect(result.segments).toHaveLength(4)
+      expect(result.segments[0].to.y).toBeCloseTo(5)
+    })
+
+    it('should match the spec example', () => {
+      // MAKE "square [REPEAT 4 [FD 10; RT 90]]
+      // EXTSCALE 0.8, :square  => equivalent to FD 8; RT 90 x4
+      const { commands } = parseLogo('MAKE "square [REPEAT 4 [FD 10; RT 90]]\nEXTSCALE 0.8, :square')
+      const result = executeLogo(commands, [])
+
+      // Should end up back at origin (scaled square)
+      const last = result.segments[result.segments.length - 1]
+      expect(last.to.x).toBeCloseTo(0)
+      expect(last.to.y).toBeCloseTo(0)
+    })
+  })
 })
 

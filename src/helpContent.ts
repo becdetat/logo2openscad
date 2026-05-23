@@ -424,6 +424,30 @@ Record the turtle's current position as a Bézier control point within an \`EXTB
 
 ---
 
+### EXTSCALE \`factor\`, \`[instructionlist]\` or \`factor\`, \`:variable\`
+Execute an instruction list with all \`FD\` and \`BK\` distances multiplied by the given scale factor. Useful for reusing shapes at different sizes without redefining them.
+
+- Scaling is multiplicative: nested \`EXTSCALE\` calls multiply together
+- \`RT\`, \`LT\`, \`SETH\`, \`ARC\`, and position commands are unaffected
+- Works with both inline instruction lists and variable references
+
+\`\`\`logo
+// Scale inline instructions
+EXTSCALE 0.5, [FD 100; RT 90; FD 100]
+// Equivalent to: FD 50; RT 90; FD 50
+
+// Scale a stored macro
+MAKE "square [REPEAT 4 [FD 10; RT 90]]
+EXTSCALE 0.8, :square
+// Draws a square with side length 8 instead of 10
+
+// Nested scaling
+EXTSCALE 2, [EXTSCALE 3, [FD 10]]
+// Equivalent to: FD 60 (10 * 2 * 3)
+\`\`\`
+
+---
+
 ### PRINT \`arg1, arg2, ...\`
 Output text as a single-line comment in the OpenSCAD output. Arguments are comma-separated and can be:
 - **Strings in brackets**: \`[text]\`

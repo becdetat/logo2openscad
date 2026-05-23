@@ -485,4 +485,54 @@ describe('parser', () => {
       expect(result.diagnostics).toHaveLength(0)
     })
   })
+
+  describe('EXTSCALE command', () => {
+    it('should parse EXTSCALE with inline instruction list', () => {
+      const result = parseLogo('EXTSCALE 0.5, [FD 100]')
+      expect(result.commands).toHaveLength(1)
+      expect(result.commands[0].kind).toBe('EXTSCALE')
+      expect(result.commands[0].value).toBeDefined()
+      expect(result.commands[0].instructionList).toContain('FD 100')
+      expect(result.diagnostics).toHaveLength(0)
+    })
+
+    it('should parse EXTSCALE with variable reference', () => {
+      const result = parseLogo('EXTSCALE 2, :square')
+      expect(result.commands).toHaveLength(1)
+      expect(result.commands[0].kind).toBe('EXTSCALE')
+      expect(result.commands[0].instructionList).toBe(':square')
+      expect(result.diagnostics).toHaveLength(0)
+    })
+
+    it('should parse EXTSCALE with expression scale factor', () => {
+      const result = parseLogo('EXTSCALE :s * 2, [FD 10]')
+      expect(result.commands).toHaveLength(1)
+      expect(result.commands[0].kind).toBe('EXTSCALE')
+      expect(result.commands[0].value).toBeDefined()
+      expect(result.diagnostics).toHaveLength(0)
+    })
+
+    it('should parse multi-line EXTSCALE', () => {
+      const result = parseLogo('EXTSCALE 0.5, [\n  FD 10\n  RT 90\n]')
+      expect(result.commands).toHaveLength(1)
+      expect(result.commands[0].kind).toBe('EXTSCALE')
+      expect(result.diagnostics).toHaveLength(0)
+    })
+
+    it('should report error for EXTSCALE without comma', () => {
+      const result = parseLogo('EXTSCALE 0.5 [FD 10]')
+      expect(result.diagnostics.length).toBeGreaterThan(0)
+    })
+
+    it('should report error for EXTSCALE with unclosed bracket', () => {
+      const result = parseLogo('EXTSCALE 0.5, [FD 10')
+      expect(result.diagnostics.length).toBeGreaterThan(0)
+      expect(result.diagnostics[0].message).toContain('missing closing bracket')
+    })
+
+    it('should report error for EXTSCALE without instruction list', () => {
+      const result = parseLogo('EXTSCALE 0.5,')
+      expect(result.diagnostics.length).toBeGreaterThan(0)
+    })
+  })
 })

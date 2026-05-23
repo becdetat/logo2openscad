@@ -36,11 +36,13 @@ function collectControlPoints(
   startY: number,
   startHeadingDeg: number,
   variables: VariableContext,
+  initialDistanceScale = 1,
 ): { controlPoints: Point[]; finalX: number; finalY: number; finalHeadingDeg: number } {
   const controlPoints: Point[] = []
   let x = startX
   let y = startY
   let headingDeg = startHeadingDeg
+  let distanceScale = initialDistanceScale
   const localVars: VariableContext = new Map(variables)
 
   const processCmd = (cmd: LogoCommand): void => {
@@ -51,7 +53,7 @@ function collectControlPoints(
       case 'FD':
       case 'BK': {
         const value = cmd.value ? evaluateExpression(cmd.value, localVars) : 0
-        const dist = cmd.kind === 'BK' ? -value : value
+        const dist = (cmd.kind === 'BK' ? -value : value) * distanceScale
         const rad = degToRad(headingDeg)
         x += Math.sin(rad) * dist
         y += Math.cos(rad) * dist
@@ -118,6 +120,25 @@ function collectControlPoints(
         }
         break
       }
+      case 'EXTSCALE': {
+        if (cmd.value && cmd.instructionList !== undefined) {
+          const scale = evaluateExpression(cmd.value, localVars)
+          let ilText = cmd.instructionList
+          if (ilText.startsWith(':')) {
+            const varName = ilText.slice(1)
+            const varValue = localVars.get(varName)
+            if (varValue && typeof varValue === 'object' && varValue.type === 'instructionList') {
+              ilText = varValue.value
+            }
+          }
+          const prevScale = distanceScale
+          distanceScale *= scale
+          const result = parseLogo(ilText)
+          result.commands.forEach(processCmd)
+          distanceScale = prevScale
+        }
+        break
+      }
     }
   }
 
@@ -152,6 +173,7 @@ export function executeLogo(
   let penDown = true
   let arcGroupId = 0
   let currentFn = 40 // Default FN value (40/4 = 10 segments per 90°)
+  let distanceScale = 1
 
   let currentPolygon: Point[] | null = [{ x, y }]
   let currentPolygonComments: LogoComment[] = []
@@ -315,7 +337,7 @@ export function executeLogo(
       case 'FD':
       case 'BK': {
         const value = cmd.value ? evaluateExpression(cmd.value, variables) : 0
-        const dist = cmd.kind === 'BK' ? -value : value
+        const dist = (cmd.kind === 'BK' ? -value : value) * distanceScale
         const rad = degToRad(headingDeg)
         const nx = x + Math.sin(rad) * dist
         const ny = y + Math.cos(rad) * dist
@@ -439,7 +461,7 @@ export function executeLogo(
       case 'EXTBEZIERCURVE': {
         if (cmd.instructionList !== undefined) {
           const { controlPoints, finalX, finalY, finalHeadingDeg } = collectControlPoints(
-            cmd.instructionList, x, y, headingDeg, variables,
+            cmd.instructionList, x, y, headingDeg, variables, distanceScale,
           )
 
           if (controlPoints.length >= 2) {
@@ -471,6 +493,31 @@ export function executeLogo(
       }
       case 'EXTDEFCONTROLPOINT': {
         // No-op in the main execution context; only meaningful within EXTBEZIERCURVE instruction lists
+        break
+      }
+      case 'EXTSCALE': {
+        if (cmd.value && cmd.instructionList !== undefined) {
+          const scale = evaluateExpression(cmd.value, variables)
+          let instructionListText = cmd.instructionList
+
+          if (instructionListText.startsWith(':')) {
+            const varName = instructionListText.slice(1)
+            const varValue = variables.get(varName)
+            if (varValue === undefined) {
+              throw new Error(`Undefined variable: ${varName}`)
+            }
+            if (typeof varValue !== 'object' || varValue.type !== 'instructionList') {
+              throw new Error(`Variable :${varName} is not an instruction list`)
+            }
+            instructionListText = varValue.value
+          }
+
+          const prevScale = distanceScale
+          distanceScale *= scale
+          const scaleResult = parseLogo(instructionListText)
+          executeCommands(scaleResult.commands)
+          distanceScale = prevScale
+        }
         break
       }
       case 'EXTCOMMENTPOS': {

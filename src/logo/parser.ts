@@ -36,6 +36,7 @@ const aliasToKind: Record<string, LogoCommandKind> = {
   PRINT: 'PRINT',
   EXTBEZIERCURVE: 'EXTBEZIERCURVE',
   EXTDEFCONTROLPOINT: 'EXTDEFCONTROLPOINT',
+  EXTSCALE: 'EXTSCALE',
 }
 
 function rangeForSegment(lineNumber: number, startCol: number, endCol: number): SourceRange {
@@ -125,6 +126,12 @@ export function parseLogo(source: string): ParseResult {
         if (!inBlockCommand && i + 14 <= processedSource.length) {
           const word14 = processedSource.slice(i, i + 14).toUpperCase()
           if (word14 === 'EXTBEZIERCURVE') {
+            inBlockCommand = true
+          }
+        }
+        if (!inBlockCommand && i + 8 <= processedSource.length) {
+          const word8 = processedSource.slice(i, i + 8).toUpperCase()
+          if (word8 === 'EXTSCALE') {
             inBlockCommand = true
           }
         }
@@ -450,6 +457,50 @@ export function parseLogo(source: string): ParseResult {
             
             if (!hasError && printArgs.length > 0) {
               commands.push({ kind, printArgs, sourceLine: lineNumber })
+            }
+          }
+        } else if (kind === 'EXTSCALE') {
+          // EXTSCALE factor, [instructionlist] or EXTSCALE factor, :variable
+          const argsText = trimmed.slice(cmdRaw.length).trim()
+
+          // Find first comma outside brackets
+          let firstComma = -1
+          let commaDepth = 0
+          for (let ci = 0; ci < argsText.length; ci++) {
+            if (argsText[ci] === '[') commaDepth++
+            else if (argsText[ci] === ']') commaDepth--
+            else if (argsText[ci] === ',' && commaDepth === 0) {
+              firstComma = ci
+              break
+            }
+          }
+
+          if (firstComma === -1) {
+            diagnostics.push(diagnostic('EXTSCALE requires a scale factor and instruction list: EXTSCALE factor, [instructions] or EXTSCALE factor, :variable', segRange))
+          } else {
+            const scaleText = argsText.slice(0, firstComma).trim()
+            const rest = argsText.slice(firstComma + 1).trim()
+            const scaleExpr = parseExpression(scaleText)
+
+            if (!scaleExpr) {
+              diagnostics.push(diagnostic(`Invalid scale expression: ${scaleText}`, segRange))
+            } else if (rest.startsWith('[')) {
+              const bracketEnd = rest.lastIndexOf(']')
+              if (bracketEnd === -1) {
+                diagnostics.push(diagnostic('EXTSCALE instruction list missing closing bracket ]', segRange))
+              } else {
+                const instructionList = rest.slice(1, bracketEnd)
+                commands.push({ kind, value: scaleExpr, instructionList, sourceLine: lineNumber })
+              }
+            } else if (rest.startsWith(':')) {
+              const varName = rest.slice(1).toLowerCase()
+              if (!varName) {
+                diagnostics.push(diagnostic('EXTSCALE variable name cannot be empty', segRange))
+              } else {
+                commands.push({ kind, value: scaleExpr, instructionList: `:${varName}`, sourceLine: lineNumber })
+              }
+            } else {
+              diagnostics.push(diagnostic('EXTSCALE requires instruction list in brackets or variable reference: EXTSCALE factor, [instructions] or EXTSCALE factor, :variable', segRange))
             }
           }
         } else if (kind === 'EXTBEZIERCURVE') {
