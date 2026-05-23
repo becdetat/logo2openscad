@@ -56,6 +56,7 @@ export type LogoPolygon = {
   points: Point[]
   comments: LogoComment[]
   commentsByPointIndex: Map<number, LogoComment[]>  // Comments to appear before each point index
+  verboseSourceLines?: Map<number, number[]>  // Per-point source line numbers for verbose output
   commentOnly?: boolean  // If true, only output comments without geometry
   circleGeometry?: {  // If present, output as circle(r=..., $fn=...) instead of polygon
     center: Point

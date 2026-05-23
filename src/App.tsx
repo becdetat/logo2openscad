@@ -63,7 +63,16 @@ export default function App(props: AppProps) {
       return { segments: [], polygons: [], markers: [] }
     }
   }, [parseResult])
-  const openScad = useMemo(() => generateOpenScad(runResult.polygons, settings.indentSpaces, settings.optimizeCircles), [runResult.polygons, settings.indentSpaces, settings.optimizeCircles])
+  const openScad = useMemo(
+    () => generateOpenScad(
+      runResult.polygons,
+      settings.indentSpaces,
+      settings.optimizeCircles,
+      settings.commentVerbosity === 'verbose',
+      settings.commentVerbosity === 'verbose' ? source.split('\n') : [],
+    ),
+    [runResult.polygons, settings.indentSpaces, settings.optimizeCircles, settings.commentVerbosity, source],
+  )
 
   useEffect(() => {
     runResultRef.current = runResult

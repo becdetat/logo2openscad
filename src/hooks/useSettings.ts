@@ -3,11 +3,14 @@ import { useCallback, useEffect, useRef, useState } from 'react'
 // Event to notify all useSettings hooks to reload
 const SETTINGS_CHANGED_EVENT = 'logo2openscad:settings-changed'
 
+export type CommentVerbosity = 'default' | 'verbose'
+
 export type Settings = {
   hidePenUp: boolean
   penWidth: number
   indentSpaces: number
   optimizeCircles: boolean
+  commentVerbosity: CommentVerbosity
 }
 
 const DEFAULTS: Settings = {
@@ -15,6 +18,7 @@ const DEFAULTS: Settings = {
   penWidth: 2,
   indentSpaces: 4,
   optimizeCircles: true,
+  commentVerbosity: 'default',
 }
 
 const STORAGE_KEY = 'logo2openscad:settings'
@@ -29,6 +33,7 @@ function loadSettings(): Settings {
       penWidth: typeof parsed.penWidth === 'number' && parsed.penWidth > 0 ? parsed.penWidth : DEFAULTS.penWidth,
       indentSpaces: typeof parsed.indentSpaces === 'number' && parsed.indentSpaces > 0 ? parsed.indentSpaces : DEFAULTS.indentSpaces,
       optimizeCircles: typeof parsed.optimizeCircles === 'boolean' ? parsed.optimizeCircles : DEFAULTS.optimizeCircles,
+      commentVerbosity: parsed.commentVerbosity === 'verbose' ? 'verbose' : DEFAULTS.commentVerbosity,
     }
   } catch {
     return { ...DEFAULTS }

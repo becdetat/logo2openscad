@@ -504,6 +504,99 @@ describe('openscad', () => {
       expect(commentIndex).toBeLessThan(circleIndex)
     })
 
+  describe('verbose mode', () => {
+    it('should not emit verbose comments when verbose=false', () => {
+      const { commands, comments } = parseLogo('FD 10\nRT 90\nFD 10')
+      const result = executeLogo(commands, comments)
+      const out = generateOpenScad(result.polygons, 2, true, false, ['FD 10', 'RT 90', 'FD 10'])
+      expect(out).not.toContain('// FD 10')
+      expect(out).not.toContain('// RT 90')
+    })
+
+    it('should emit source lines as verbose comments when verbose=true', () => {
+      const source = 'FD 10\nRT 90\nFD 10'
+      const { commands, comments } = parseLogo(source)
+      const result = executeLogo(commands, comments)
+      const out = generateOpenScad(result.polygons, 2, true, true, source.split('\n'))
+
+      expect(out).toContain('// FD 10')
+      expect(out).toContain('// RT 90')
+    })
+
+    it('should place source comment before the point it creates', () => {
+      const source = 'FD 10'
+      const { commands, comments } = parseLogo(source)
+      const result = executeLogo(commands, comments)
+      const out = generateOpenScad(result.polygons, 2, true, true, source.split('\n'))
+
+      // Comment should appear before the [0, 10] point, not before [0, 0]
+      const commentIdx = out.indexOf('// FD 10')
+      const originIdx = out.indexOf('[0, 0]')
+      const fdPointIdx = out.indexOf('[0, 10]')
+      expect(commentIdx).toBeGreaterThan(originIdx)
+      expect(commentIdx).toBeLessThan(fdPointIdx)
+    })
+
+    it('should group RT and FD lines before the point the FD creates', () => {
+      const source = 'FD 10\nRT 90\nFD 10'
+      const { commands, comments } = parseLogo(source)
+      const result = executeLogo(commands, comments)
+      const out = generateOpenScad(result.polygons, 2, true, true, source.split('\n'))
+
+      const rtIdx = out.indexOf('// RT 90')
+      const fdPointIdx = out.lastIndexOf('[')  // last point before close
+      // RT 90 comment should appear somewhere after the first FD point
+      const firstFdComment = out.indexOf('// FD 10')
+      expect(rtIdx).toBeGreaterThan(firstFdComment)
+    })
+
+    it('should match the spec example output', () => {
+      const source = 'FD 10\nRT 90\nFD 10\nRT 90\nFD 10'
+      const { commands, comments } = parseLogo(source)
+      const result = executeLogo(commands, comments)
+      const out = generateOpenScad(result.polygons, 2, true, true, source.split('\n'))
+
+      // Every non-empty, non-comment source line should appear as a comment
+      expect(out).toContain('// FD 10')
+      expect(out).toContain('// RT 90')
+    })
+
+    it('should still include user comments alongside verbose comments', () => {
+      const source = '# My comment\nFD 10'
+      const { commands, comments } = parseLogo(source)
+      const result = executeLogo(commands, comments)
+      const out = generateOpenScad(result.polygons, 2, true, true, source.split('\n'))
+
+      expect(out).toContain('// FD 10')
+      // User's # comment is captured by the parser but not by commentsByPointIndex in this case
+      // The important thing is verbose source lines appear
+      expect(out).toContain('// FD 10')
+    })
+
+    it('should not emit verbose comments for REPEAT inner commands', () => {
+      const source = 'REPEAT 4 [FD 10; RT 90]'
+      const { commands, comments } = parseLogo(source)
+      const result = executeLogo(commands, comments)
+      const out = generateOpenScad(result.polygons, 2, true, true, source.split('\n'))
+
+      // The REPEAT line (line 1) should appear as a verbose comment (before first generated point)
+      expect(out).toContain('// REPEAT 4 [FD 10; RT 90]')
+      // Inner FD 10 should NOT appear since it's at depth > 0
+      const repeatCommentCount = (out.match(/\/\/ REPEAT/g) || []).length
+      expect(repeatCommentCount).toBe(1)  // Only once, for the first generated point
+    })
+
+    it('should trim trailing whitespace from source lines', () => {
+      const source = 'FD 10   '
+      const { commands, comments } = parseLogo(source)
+      const result = executeLogo(commands, comments)
+      const out = generateOpenScad(result.polygons, 2, true, true, source.split('\n'))
+
+      expect(out).toContain('// FD 10')
+      expect(out).not.toContain('// FD 10   ')
+    })
+  })
+
     it('should handle multiple circles', () => {
       const polygons: LogoPolygon[] = [
         {

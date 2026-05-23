@@ -201,22 +201,42 @@ export function executeLogo(
   let currentPolygon: Point[] | null = [{ x, y }]
   let currentPolygonComments: LogoComment[] = []
   let currentPolygonCommentsByPointIndex: Map<number, LogoComment[]> = new Map()
+  let currentPolygonVerboseLines: Map<number, number[]> = new Map()
   let polygonStartLine = 1
   let usedCommentIndices: Set<number> = new Set()
+
+  // Verbose mode: track which top-level source lines led to each polygon point
+  let innerCommandDepth = 0
+  let pendingVerboseLines: number[] = []
+
+  const addVerboseSourceLine = (cmdLine: number) => {
+    if (innerCommandDepth === 0 && cmdLine > 0) {
+      pendingVerboseLines.push(cmdLine)
+    }
+  }
+
+  const recordVerboseForPoint = (pointIndex: number) => {
+    if (pendingVerboseLines.length > 0) {
+      currentPolygonVerboseLines.set(pointIndex, [...pendingVerboseLines])
+      pendingVerboseLines = []
+    }
+  }
 
   const finalizePolygon = (commentOnly = false) => {
     if (!currentPolygon) return
     if (currentPolygon.length === 0) currentPolygon.push({ x, y })
-    
-    polygons.push({ 
-      points: currentPolygon, 
+
+    polygons.push({
+      points: currentPolygon,
       comments: currentPolygonComments,
       commentsByPointIndex: currentPolygonCommentsByPointIndex,
+      verboseSourceLines: currentPolygonVerboseLines,
       commentOnly
     })
     currentPolygon = null
     currentPolygonComments = []
     currentPolygonCommentsByPointIndex = new Map()
+    currentPolygonVerboseLines = new Map()
   }
 
   const ensurePolygonStarted = () => {
@@ -270,6 +290,7 @@ export function executeLogo(
 
   const executeCommand = (cmd: LogoCommand) => {
     const cmdLine = cmd.sourceLine ?? 0
+    addVerboseSourceLine(cmdLine)
 
     // Collect comments up to this command line
     if (penDown && cmdLine > polygonStartLine) {
@@ -325,6 +346,8 @@ export function executeLogo(
           penDown = true
           currentPolygon = [{ x, y }]
           currentPolygonCommentsByPointIndex = new Map()
+          currentPolygonVerboseLines = new Map()
+          pendingVerboseLines = []
           usedCommentIndices = new Set()
         }
         break
@@ -336,6 +359,7 @@ export function executeLogo(
         if (penDown) {
           ensurePolygonStarted()
           currentPolygon!.push({ x, y })
+          recordVerboseForPoint(currentPolygon!.length - 1)
         }
         break
       }
@@ -347,6 +371,7 @@ export function executeLogo(
         if (penDown) {
           ensurePolygonStarted()
           currentPolygon!.push({ x, y })
+          recordVerboseForPoint(currentPolygon!.length - 1)
         }
         break
       }
@@ -360,6 +385,7 @@ export function executeLogo(
         if (penDown) {
           ensurePolygonStarted()
           currentPolygon!.push({ x, y })
+          recordVerboseForPoint(currentPolygon!.length - 1)
         }
         break
       }
@@ -380,6 +406,7 @@ export function executeLogo(
         if (penDown) {
           ensurePolygonStarted()
           currentPolygon!.push({ x, y })
+          recordVerboseForPoint(currentPolygon!.length - 1)
         }
 
         break
@@ -475,6 +502,7 @@ export function executeLogo(
         if (penDown) {
           ensurePolygonStarted()
           currentPolygon!.push({ x, y })
+          recordVerboseForPoint(currentPolygon!.length - 1)
         }
         break
       }
@@ -547,7 +575,9 @@ export function executeLogo(
           const prevScale = distanceScale
           distanceScale *= scale
           const scaleResult = parseLogo(instructionListText)
+          innerCommandDepth++
           executeCommands(scaleResult.commands)
+          innerCommandDepth--
           distanceScale = prevScale
         }
         break
@@ -648,12 +678,11 @@ export function executeLogo(
           const count = Math.floor(evaluateExpression(cmd.value, variables))
           if (count > 0) {
             let instructionListText = cmd.instructionList
-            
-            // Check if it's a variable reference (starts with :)
+
             if (instructionListText.startsWith(':')) {
               const varName = instructionListText.slice(1)
               const varValue = variables.get(varName)
-              
+
               if (varValue === undefined) {
                 throw new Error(`Undefined variable: ${varName}`)
               }
@@ -662,29 +691,32 @@ export function executeLogo(
               }
               instructionListText = varValue.value
             }
-            
+
             const repeatResult = parseLogo(instructionListText)
+            innerCommandDepth++
             for (let i = 0; i < count; i++) {
               executeCommands(repeatResult.commands)
             }
+            innerCommandDepth--
           }
         }
         break
       }
       case 'CALL': {
-        // Execute instruction list stored in variable
         if (cmd.varName) {
           const varValue = variables.get(cmd.varName)
-          
+
           if (varValue === undefined) {
             throw new Error(`Undefined variable: ${cmd.varName}`)
           }
           if (typeof varValue !== 'object' || varValue.type !== 'instructionList') {
             throw new Error(`Variable :${cmd.varName} is not an instruction list`)
           }
-          
+
           const callResult = parseLogo(varValue.value)
+          innerCommandDepth++
           executeCommands(callResult.commands)
+          innerCommandDepth--
         }
         break
       }

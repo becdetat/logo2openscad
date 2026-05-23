@@ -133,6 +133,25 @@ export function SettingsDialog(props: SettingsDialogProps) {
                             When enabled, 360° arcs are output as circle() commands instead of polygons with many points. Default: {DEFAULTS.optimizeCircles ? 'Enabled' : 'Disabled'}
                         </Typography>
                     </Stack>
+
+                    <Stack spacing={1}>
+                        <FormControlLabel
+                            control={
+                                <Checkbox
+                                    checked={localSettings.commentVerbosity === 'verbose'}
+                                    onChange={(e) => setLocalSettings({ ...localSettings, commentVerbosity: e.target.checked ? 'verbose' : 'default' })}
+                                />
+                            }
+                            label={
+                                <Typography variant="subtitle2">
+                                    Verbose comments
+                                </Typography>
+                            }
+                        />
+                        <Typography variant="caption" color="text.secondary">
+                            When enabled, each Logo source line is included as a comment in the OpenSCAD output alongside user comments. Default: {DEFAULTS.commentVerbosity === 'verbose' ? 'Enabled' : 'Disabled'}
+                        </Typography>
+                    </Stack>
                 </Stack>
             </DialogContent>
             <DialogActions>

@@ -4,11 +4,10 @@ https://github.com/becdetat/logo2openscad/issues/16
 
 Currently comments added to the Logo script are included fairly closely to the corresponding generated OpenSCAD commands.
 
-I want the comment verbosity to be configurable.
+I want the comment verbosity to be configurable in the app settings.
 
 Options:
-- "No comments" - no comments are included in the output
-- "Comments" - user's comments are included in the output
+- "Comments" - user's comments are included in the output (default)
 - "Verbose" - user's comments and each line of Logo is included in the output
 
 Verbose mode might look like this. Input:

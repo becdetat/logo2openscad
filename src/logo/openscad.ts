@@ -5,7 +5,13 @@ function pointsEqual(a: Point, b: Point) {
   return a.x === b.x && a.y === b.y
 }
 
-export function generateOpenScad(polygons: LogoPolygon[], indentSpaces: number = 2, optimizeCircles: boolean = true): string {
+export function generateOpenScad(
+  polygons: LogoPolygon[],
+  indentSpaces: number = 2,
+  optimizeCircles: boolean = true,
+  verbose: boolean = false,
+  sourceLines: string[] = [],
+): string {
   if (polygons.length === 0) return '// No polygons'
 
   const indent = ' '.repeat(indentSpaces)
@@ -51,7 +57,20 @@ export function generateOpenScad(polygons: LogoPolygon[], indentSpaces: number =
     
     lines.push('polygon(points=[')
     for (let i = 0; i < pts.length; i++) {
-      // Insert comments before this point
+      // Insert verbose source lines before this point
+      if (verbose && poly.verboseSourceLines) {
+        const verboseLines = poly.verboseSourceLines.get(i)
+        if (verboseLines) {
+          for (const lineNum of verboseLines) {
+            const lineText = sourceLines[lineNum - 1]?.trimEnd()
+            if (lineText !== undefined) {
+              lines.push(`// ${lineText}`)
+            }
+          }
+        }
+      }
+
+      // Insert user comments before this point
       const commentsForThisPoint = poly.commentsByPointIndex.get(i)
       if (commentsForThisPoint) {
         for (const comment of commentsForThisPoint) {
