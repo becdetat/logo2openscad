@@ -377,6 +377,53 @@ ARC 360, 25
 - \`EXTSETFN 100\`: Very smooth circles
 - \`MAKE "fn 3; REPEAT 4 [EXTSETFN :fn; ARC 360, 25; MAKE "fn :fn + 1]\`: Draws polygons from triangle to hexagon
 
+### EXTBEZIERCURVE \`[instructions]\`
+Draw a Bézier curve using control points defined by \`EXTDEFCONTROLPOINT\` calls within the instruction list. The instruction list is executed as if the pen is up — movements position the turtle to each control point but do not draw. The number of curve steps is the current FN value multiplied by 4.
+
+After the command completes, the turtle is at the final position and heading from the instruction list execution.
+
+\`\`\`logo
+HOME
+EXTBEZIERCURVE [
+    EXTDEFCONTROLPOINT      // P0 at (0, 0)
+    FD 10
+    EXTDEFCONTROLPOINT      // P1 at (0, 10)
+    RT 90
+    FD 10
+    EXTDEFCONTROLPOINT      // P2 at (10, 10)
+    RT 90
+    FD 10
+    EXTDEFCONTROLPOINT      // P3 at (10, 0)
+]
+// Draws a cubic Bézier curve from (0,0) to (10,0)
+// Turtle ends at (10, 0), heading 180°
+\`\`\`
+
+Any number of control points can be used:
+- **2 points**: Linear (straight line)
+- **3 points**: Quadratic curve
+- **4 points**: Cubic curve (third-order)
+- **5+ points**: Higher-order curves
+
+Variables and all movement commands work inside the instruction list. Use \`EXTSETFN\` before the curve to control resolution (steps = FN × 4).
+
+\`\`\`logo
+// Higher-resolution curve
+EXTSETFN 20
+EXTBEZIERCURVE [
+    EXTDEFCONTROLPOINT
+    FD 30
+    RT 90
+    FD 30
+    EXTDEFCONTROLPOINT
+]
+\`\`\`
+
+### EXTDEFCONTROLPOINT
+Record the turtle's current position as a Bézier control point within an \`EXTBEZIERCURVE\` instruction list. Has no effect when used outside \`EXTBEZIERCURVE\`.
+
+---
+
 ### PRINT \`arg1, arg2, ...\`
 Output text as a single-line comment in the OpenSCAD output. Arguments are comma-separated and can be:
 - **Strings in brackets**: \`[text]\`

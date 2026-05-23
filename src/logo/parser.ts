@@ -34,6 +34,8 @@ const aliasToKind: Record<string, LogoCommandKind> = {
   EXTSETFN: 'EXTSETFN',
   EXTMARKER: 'EXTMARKER',
   PRINT: 'PRINT',
+  EXTBEZIERCURVE: 'EXTBEZIERCURVE',
+  EXTDEFCONTROLPOINT: 'EXTDEFCONTROLPOINT',
 }
 
 function rangeForSegment(lineNumber: number, startCol: number, endCol: number): SourceRange {
@@ -101,31 +103,43 @@ export function parseLogo(source: string): ParseResult {
   }
   processedSource = processedLines.join('\n')
 
-  // Third pass: normalize multi-line REPEAT commands by replacing newlines inside brackets with spaces
+  // Third pass: normalize multi-line block commands (REPEAT, EXTBEZIERCURVE) by replacing
+  // newlines inside brackets with semicolons to preserve command separation
   let normalizedSource = ''
   let bracketDepth = 0
-  let inRepeat = false
-  
+  let inBlockCommand = false
+
   for (let i = 0; i < processedSource.length; i++) {
     const char = processedSource[i]
-    
-    // Check if we're starting a REPEAT command
-    if (!inRepeat && i < processedSource.length - 6) {
-      const word = processedSource.slice(i, i + 6).toUpperCase()
-      if (word === 'REPEAT' && (i === 0 || /\s/.test(processedSource[i - 1]))) {
-        inRepeat = true
+
+    // Check if we're starting a block command (REPEAT or EXTBEZIERCURVE)
+    if (!inBlockCommand) {
+      const isWordStart = i === 0 || /\s/.test(processedSource[i - 1])
+      if (isWordStart) {
+        if (i + 6 <= processedSource.length) {
+          const word6 = processedSource.slice(i, i + 6).toUpperCase()
+          if (word6 === 'REPEAT') {
+            inBlockCommand = true
+          }
+        }
+        if (!inBlockCommand && i + 14 <= processedSource.length) {
+          const word14 = processedSource.slice(i, i + 14).toUpperCase()
+          if (word14 === 'EXTBEZIERCURVE') {
+            inBlockCommand = true
+          }
+        }
       }
     }
-    
+
     if (char === '[') {
       bracketDepth++
       normalizedSource += char
     } else if (char === ']') {
       bracketDepth--
-      if (bracketDepth === 0) inRepeat = false
+      if (bracketDepth === 0) inBlockCommand = false
       normalizedSource += char
-    } else if (char === '\n' && inRepeat && bracketDepth > 0) {
-      // Replace newlines inside REPEAT brackets with semicolon to preserve command separation
+    } else if (char === '\n' && inBlockCommand && bracketDepth > 0) {
+      // Replace newlines inside block command brackets with semicolons
       normalizedSource += '; '
     } else {
       normalizedSource += char
@@ -436,6 +450,22 @@ export function parseLogo(source: string): ParseResult {
             
             if (!hasError && printArgs.length > 0) {
               commands.push({ kind, printArgs, sourceLine: lineNumber })
+            }
+          }
+        } else if (kind === 'EXTBEZIERCURVE') {
+          // EXTBEZIERCURVE requires [instructionlist] containing EXTDEFCONTROLPOINT markers
+          const argsText = trimmed.slice(cmdRaw.length).trim()
+          const bracketStart = argsText.indexOf('[')
+
+          if (bracketStart === -1) {
+            diagnostics.push(diagnostic('EXTBEZIERCURVE requires instruction list in brackets: EXTBEZIERCURVE [instructions]', segRange))
+          } else {
+            const bracketEnd = argsText.lastIndexOf(']')
+            if (bracketEnd === -1 || bracketEnd < bracketStart) {
+              diagnostics.push(diagnostic('EXTBEZIERCURVE instruction list missing closing bracket ]', segRange))
+            } else {
+              const instructionList = argsText.slice(bracketStart + 1, bracketEnd)
+              commands.push({ kind, instructionList, sourceLine: lineNumber })
             }
           }
         } else if (kind === 'REPEAT') {

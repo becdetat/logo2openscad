@@ -15,6 +15,118 @@ function degToRad(deg: number) {
   return (deg * Math.PI) / 180
 }
 
+function evaluateBezier(points: Point[], t: number): Point {
+  let pts = [...points]
+  while (pts.length > 1) {
+    const next: Point[] = []
+    for (let i = 0; i < pts.length - 1; i++) {
+      next.push({
+        x: (1 - t) * pts[i].x + t * pts[i + 1].x,
+        y: (1 - t) * pts[i].y + t * pts[i + 1].y,
+      })
+    }
+    pts = next
+  }
+  return pts[0]
+}
+
+function collectControlPoints(
+  instructionListText: string,
+  startX: number,
+  startY: number,
+  startHeadingDeg: number,
+  variables: VariableContext,
+): { controlPoints: Point[]; finalX: number; finalY: number; finalHeadingDeg: number } {
+  const controlPoints: Point[] = []
+  let x = startX
+  let y = startY
+  let headingDeg = startHeadingDeg
+  const localVars: VariableContext = new Map(variables)
+
+  const processCmd = (cmd: LogoCommand): void => {
+    switch (cmd.kind) {
+      case 'EXTDEFCONTROLPOINT':
+        controlPoints.push({ x, y })
+        break
+      case 'FD':
+      case 'BK': {
+        const value = cmd.value ? evaluateExpression(cmd.value, localVars) : 0
+        const dist = cmd.kind === 'BK' ? -value : value
+        const rad = degToRad(headingDeg)
+        x += Math.sin(rad) * dist
+        y += Math.cos(rad) * dist
+        break
+      }
+      case 'LT':
+        headingDeg -= cmd.value ? evaluateExpression(cmd.value, localVars) : 0
+        break
+      case 'RT':
+        headingDeg += cmd.value ? evaluateExpression(cmd.value, localVars) : 0
+        break
+      case 'SETH':
+        headingDeg = cmd.value ? evaluateExpression(cmd.value, localVars) : 0
+        break
+      case 'HOME':
+        x = 0
+        y = 0
+        headingDeg = 0
+        break
+      case 'SETX':
+        x = cmd.value ? evaluateExpression(cmd.value, localVars) : 0
+        break
+      case 'SETY':
+        y = cmd.value ? evaluateExpression(cmd.value, localVars) : 0
+        break
+      case 'SETXY':
+        x = cmd.value ? evaluateExpression(cmd.value, localVars) : 0
+        y = cmd.value2 ? evaluateExpression(cmd.value2, localVars) : 0
+        break
+      case 'MAKE':
+        if (cmd.varName) {
+          if (cmd.instructionListValue !== undefined) {
+            localVars.set(cmd.varName, { type: 'instructionList', value: cmd.instructionListValue })
+          } else if (cmd.value) {
+            localVars.set(cmd.varName, evaluateExpression(cmd.value, localVars))
+          }
+        }
+        break
+      case 'REPEAT': {
+        if (cmd.value && cmd.instructionList !== undefined) {
+          const count = Math.floor(evaluateExpression(cmd.value, localVars))
+          let ilText = cmd.instructionList
+          if (ilText.startsWith(':')) {
+            const varName = ilText.slice(1)
+            const varValue = localVars.get(varName)
+            if (varValue && typeof varValue === 'object' && varValue.type === 'instructionList') {
+              ilText = varValue.value
+            }
+          }
+          const result = parseLogo(ilText)
+          for (let i = 0; i < count; i++) {
+            result.commands.forEach(processCmd)
+          }
+        }
+        break
+      }
+      case 'CALL': {
+        if (cmd.varName) {
+          const varValue = localVars.get(cmd.varName)
+          if (varValue && typeof varValue === 'object' && varValue.type === 'instructionList') {
+            const result = parseLogo(varValue.value)
+            result.commands.forEach(processCmd)
+          }
+        }
+        break
+      }
+    }
+  }
+
+  const parsed = parseLogo(instructionListText)
+  parsed.commands.forEach(processCmd)
+
+  return { controlPoints, finalX: x, finalY: y, finalHeadingDeg: headingDeg }
+}
+
 function createSegment(
   from: Point,
   to: Point,
@@ -322,6 +434,43 @@ export function executeLogo(
           }
           currentFn = fnInt
         }
+        break
+      }
+      case 'EXTBEZIERCURVE': {
+        if (cmd.instructionList !== undefined) {
+          const { controlPoints, finalX, finalY, finalHeadingDeg } = collectControlPoints(
+            cmd.instructionList, x, y, headingDeg, variables,
+          )
+
+          if (controlPoints.length >= 2) {
+            const steps = Math.max(1, currentFn * 4)
+
+            if (penDown) {
+              ensurePolygonStarted()
+            }
+
+            for (let i = 1; i <= steps; i++) {
+              const t = i / steps
+              const tPrev = (i - 1) / steps
+              const cur = evaluateBezier(controlPoints, t)
+              const prev = evaluateBezier(controlPoints, tPrev)
+
+              segments.push(createSegment(prev, cur, penDown, cmdLine))
+
+              if (penDown) {
+                currentPolygon!.push(cur)
+              }
+            }
+          }
+
+          x = finalX
+          y = finalY
+          headingDeg = finalHeadingDeg
+        }
+        break
+      }
+      case 'EXTDEFCONTROLPOINT': {
+        // No-op in the main execution context; only meaningful within EXTBEZIERCURVE instruction lists
         break
       }
       case 'EXTCOMMENTPOS': {

@@ -65,6 +65,23 @@ Only a very small, mangled subset of the [Berkeley Logo](https://people.eecs.ber
   - `EXTCOMMENTPOS [text]` - insert a comment into the OpenSCAD output at the turtle's current position. Useful for annotating specific points in the drawing. The comment text is enclosed in square brackets and is optional.
   - `EXTMARKER [text], <x>, <y>` - add a visual marker (red cross) in the preview and insert a position comment in the OpenSCAD output. Unlike EXTCOMMENTPOS, this shows the marker position in the preview canvas. Can be used without arguments to mark current position, with just a comment `[label]`, or with coordinates to mark a specific position without moving the turtle. Examples: `EXTMARKER`, `EXTMARKER [Corner 1]`, `EXTMARKER [Origin], 0, 0`
   - `EXTSETFN <value>` - set the resolution for arc drawing. FN (fragment number) controls how many segments are used to approximate arcs and circles. Default is 40 (producing 10 segments per 90° arc). This is inspired by OpenSCAD's `$fn` special variable. A 360° circle uses FN segments. Minimum value is 1. Decimal values are rounded down. Each arc drawn after EXTSETFN uses the current FN value, allowing different resolutions for different arcs. Examples: `EXTSETFN 3` creates triangles, `EXTSETFN 6` creates hexagons, `EXTSETFN 100` creates very smooth circles.
+  - `EXTBEZIERCURVE [instructions]` - draw a Bézier curve using control points defined by `EXTDEFCONTROLPOINT` calls inside the instruction list. The instruction list is executed with the pen up — movements position the turtle but do not draw. The curve uses `FN × 4` steps. After completion, the turtle is at the final position and heading from the instruction list. Example:
+    ```
+    HOME
+    EXTBEZIERCURVE [
+        EXTDEFCONTROLPOINT   // P0 at (0, 0)
+        FD 10
+        EXTDEFCONTROLPOINT   // P1 at (0, 10)
+        RT 90
+        FD 10
+        EXTDEFCONTROLPOINT   // P2 at (10, 10)
+        RT 90
+        FD 10
+        EXTDEFCONTROLPOINT   // P3 at (10, 0)
+    ]
+    // Draws a cubic Bézier from (0,0) to (10,0) — turtle ends at (10,0), heading 180°
+    ```
+  - `EXTDEFCONTROLPOINT` - mark the turtle's current position as a Bézier control point within an `EXTBEZIERCURVE` instruction list. Has no effect outside `EXTBEZIERCURVE`.
 - Note that commands that take more than one argument require a comma between arguments
 - The following binary arithmetic operations are supported: `+`, `-`, `*`, `/`, `^`
 - Unary minus is supported: `FORWARD -10` (equivalent to `BACK 10`)
