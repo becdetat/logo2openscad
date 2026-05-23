@@ -49,6 +49,7 @@ export type LogoSegment = {
   to: Point
   penDown: boolean
   arcGroup?: number
+  sourceLine?: number
 }
 
 export type LogoPolygon = {

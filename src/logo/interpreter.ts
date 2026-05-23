@@ -15,6 +15,16 @@ function degToRad(deg: number) {
   return (deg * Math.PI) / 180
 }
 
+function createSegment(
+  from: Point,
+  to: Point,
+  penDown: boolean,
+  sourceLine?: number,
+  arcGroup?: number,
+): LogoSegment {
+  return { from, to, penDown, sourceLine, arcGroup }
+}
+
 export function executeLogo(
   commands: LogoCommand[],
   allComments: LogoComment[],
@@ -160,7 +170,7 @@ export function executeLogo(
         break
       case 'SETX': {
         const nx = cmd.value ? evaluateExpression(cmd.value, variables) : 0
-        segments.push({ from: { x, y }, to: { x: nx, y }, penDown })
+        segments.push(createSegment({ x, y }, { x: nx, y }, penDown, cmdLine))
         x = nx
         if (penDown) {
           ensurePolygonStarted()
@@ -170,7 +180,7 @@ export function executeLogo(
       }
       case 'SETY': {
         const ny = cmd.value ? evaluateExpression(cmd.value, variables) : 0
-        segments.push({ from: { x, y }, to: { x, y: ny }, penDown })
+        segments.push(createSegment({ x, y }, { x, y: ny }, penDown, cmdLine))
         y = ny
         if (penDown) {
           ensurePolygonStarted()
@@ -181,7 +191,7 @@ export function executeLogo(
       case 'SETXY': {
         const nx = cmd.value ? evaluateExpression(cmd.value, variables) : 0
         const ny = cmd.value2 ? evaluateExpression(cmd.value2, variables) : 0
-        segments.push({ from: { x, y }, to: { x: nx, y: ny }, penDown })
+        segments.push(createSegment({ x, y }, { x: nx, y: ny }, penDown, cmdLine))
         x = nx
         y = ny
         if (penDown) {
@@ -198,7 +208,7 @@ export function executeLogo(
         const nx = x + Math.sin(rad) * dist
         const ny = y + Math.cos(rad) * dist
 
-        segments.push({ from: { x, y }, to: { x: nx, y: ny }, penDown })
+        segments.push(createSegment({ x, y }, { x: nx, y: ny }, penDown, cmdLine))
 
         x = nx
         y = ny
@@ -254,7 +264,7 @@ export function executeLogo(
             const prevAngle = startHeadingRad + angleStep * (i - 1)
             const prevPx = x + radius * Math.sin(prevAngle)
             const prevPy = y + radius * Math.cos(prevAngle)
-            segments.push({ from: { x: prevPx, y: prevPy }, to: { x: px, y: py }, penDown, arcGroup: currentArcGroup })
+            segments.push(createSegment({ x: prevPx, y: prevPy }, { x: px, y: py }, penDown, cmdLine, currentArcGroup))
           }
 
           if (penDown && i > 0) {
@@ -292,7 +302,7 @@ export function executeLogo(
         break
       }
       case "HOME": {
-        segments.push({ from: { x, y }, to: { x: 0, y: 0 }, penDown })
+        segments.push(createSegment({ x, y }, { x: 0, y: 0 }, penDown, cmdLine))
         x = 0
         y = 0
         headingDeg = 0

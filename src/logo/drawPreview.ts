@@ -1,5 +1,72 @@
 import type { LogoSegment, Marker } from './types.js'
 
+export type PreviewLayout = {
+  toScreen: (p: { x: number; y: number }) => { x: number; y: number }
+}
+
+export type RenderablePreviewSegment = {
+  segment: LogoSegment
+  drawFraction: number
+}
+
+export function createPreviewLayout(
+  canvas: Pick<HTMLCanvasElement, 'width' | 'height'>,
+  segments: LogoSegment[],
+): PreviewLayout | null {
+  if (segments.length === 0) return null
+
+  let minX = Infinity
+  let maxX = -Infinity
+  let minY = Infinity
+  let maxY = -Infinity
+  for (const s of segments) {
+    minX = Math.min(minX, s.from.x, s.to.x)
+    maxX = Math.max(maxX, s.from.x, s.to.x)
+    minY = Math.min(minY, s.from.y, s.to.y)
+    maxY = Math.max(maxY, s.from.y, s.to.y)
+  }
+
+  const pad = 24
+  const spanX = Math.max(1e-9, maxX - minX)
+  const spanY = Math.max(1e-9, maxY - minY)
+  const scale = Math.min((canvas.width - pad * 2) / spanX, (canvas.height - pad * 2) / spanY)
+
+  const midX = (minX + maxX) / 2
+  const midY = (minY + maxY) / 2
+  const centerX = canvas.width / 2
+  const centerY = canvas.height / 2
+
+  return {
+    toScreen: (p: { x: number; y: number }) => ({
+      x: centerX + (p.x - midX) * scale,
+      y: centerY - (p.y - midY) * scale,
+    }),
+  }
+}
+
+export function getRenderablePreviewSegments(
+  segments: LogoSegment[],
+  visibleSegments: number,
+  hidePenUp: boolean,
+): RenderablePreviewSegment[] {
+  const fullCount = Math.floor(visibleSegments)
+  const frac = visibleSegments - fullCount
+  const renderable: RenderablePreviewSegment[] = []
+
+  for (let i = 0; i < segments.length; i++) {
+    const segment = segments[i]
+    const isPartial = i === fullCount && frac > 0
+    const isVisible = i < fullCount || isPartial
+    if (!isVisible) break
+    if (hidePenUp && !segment.penDown) continue
+
+    const drawFraction = segment.arcGroup !== undefined && isPartial ? 1 : isPartial ? frac : 1
+    renderable.push({ segment, drawFraction })
+  }
+
+  return renderable
+}
+
 export function drawPreview(
   ctx: CanvasRenderingContext2D,
   canvas: HTMLCanvasElement,
@@ -21,34 +88,10 @@ export function drawPreview(
   ctx.clearRect(0, 0, width, height)
 
   if (segments.length === 0) return
-
-  let minX = Infinity
-  let maxX = -Infinity
-  let minY = Infinity
-  let maxY = -Infinity
-  for (const s of segments) {
-    minX = Math.min(minX, s.from.x, s.to.x)
-    maxX = Math.max(maxX, s.from.x, s.to.x)
-    minY = Math.min(minY, s.from.y, s.to.y)
-    maxY = Math.max(maxY, s.from.y, s.to.y)
-  }
-
-  const pad = 24
-  const spanX = Math.max(1e-9, maxX - minX)
-  const spanY = Math.max(1e-9, maxY - minY)
-  const scale = Math.min((width - pad * 2) / spanX, (height - pad * 2) / spanY)
-
-  const midX = (minX + maxX) / 2
-  const midY = (minY + maxY) / 2
-  const centerX = width / 2
-  const centerY = height / 2
-
-  const toScreen = (p: { x: number; y: number }) => {
-    return {
-      x: centerX + (p.x - midX) * scale,
-      y: centerY - (p.y - midY) * scale,
-    }
-  }
+  const layout = createPreviewLayout(canvas, segments)
+  if (!layout) return
+  const { toScreen } = layout
+  const renderableSegments = getRenderablePreviewSegments(segments, visibleSegments, hidePenUp)
 
   // Axes
   ctx.save()
@@ -79,30 +122,7 @@ export function drawPreview(
     ctx.stroke()
   }
 
-  for (let i = 0; i < segments.length; i++) {
-    const s = segments[i]
-    const isPartial = i === fullCount && frac > 0
-    const isVisible = i < fullCount || isPartial
-    if (!isVisible) break
-
-    // For arc segments, don't show partial - show all or none
-    const isArcSegment = s.arcGroup !== undefined
-    let shouldDraw = true
-    let drawFraction = 1
-
-    if (isArcSegment && isPartial) {
-      // If this arc segment is the partial one, show it fully (not partially)
-      // The animation logic ensures we skip to show the whole arc at once
-      shouldDraw = true
-      drawFraction = 1
-    } else if (isPartial) {
-      drawFraction = frac
-    }
-
-    if (!shouldDraw) continue
-
-    // Skip pen-up segments if hidePenUp is enabled
-    if (hidePenUp && !s.penDown) continue
+  for (const { segment: s, drawFraction } of renderableSegments) {
 
     ctx.save()
     if (s.penDown) {

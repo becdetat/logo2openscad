@@ -1,11 +1,11 @@
 import { Box, Button, Checkbox, Divider, FormControlLabel, Paper, Slider, Stack, Typography } from "@mui/material";
 import PauseIcon from '@mui/icons-material/Pause'
 import PlayArrowIcon from '@mui/icons-material/PlayArrow'
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useSettings } from "../hooks/useSettings";
 import type { LogoSegment, Marker } from "../logo/types";
 import { alpha, useTheme } from "@mui/material/styles";
-import { drawPreview } from "../logo/drawPreview";
+import { createPreviewLayout, drawPreview, getRenderablePreviewSegments } from "../logo/drawPreview";
 import { clamp } from "../helpers/clamp";
 
 export type PreviewProps = {
@@ -24,6 +24,60 @@ export function Preview(props: PreviewProps) {
     const theme = useTheme();
     const canvasRef = useRef<HTMLCanvasElement | null>(null);
     const { settings, setSettings } = useSettings();
+    const [hoveredSegment, setHoveredSegment] = useState<{ line: number; length: number; x: number; y: number } | null>(null);
+
+    const findHoveredSegment = (canvasX: number, canvasY: number, displayX: number, displayY: number) => {
+        const canvas = canvasRef.current;
+        if (!canvas || props.activeSegments.length === 0) return null;
+
+        const layout = createPreviewLayout(canvas, props.activeSegments);
+        if (!layout) return null;
+
+        const visibleSegments = getRenderablePreviewSegments(
+            props.activeSegments,
+            clamp(props.progress, 0, props.activeSegments.length),
+            settings.hidePenUp,
+        );
+
+        const hitRadius = 8;
+        let bestMatch: { line: number; length: number; x: number; y: number; distance: number } | null = null;
+
+        for (const { segment, drawFraction } of visibleSegments) {
+            const from = layout.toScreen(segment.from);
+            const to = layout.toScreen(segment.to);
+            const visibleTo = {
+                x: from.x + (to.x - from.x) * drawFraction,
+                y: from.y + (to.y - from.y) * drawFraction,
+            };
+            const dx = visibleTo.x - from.x;
+            const dy = visibleTo.y - from.y;
+            const lengthSquared = dx * dx + dy * dy;
+
+            let t = 0;
+            if (lengthSquared > 0) {
+                t = ((canvasX - from.x) * dx + (canvasY - from.y) * dy) / lengthSquared;
+                t = Math.max(0, Math.min(1, t));
+            }
+
+            const nearestX = from.x + dx * t;
+            const nearestY = from.y + dy * t;
+            const distance = Math.hypot(canvasX - nearestX, canvasY - nearestY);
+            if (distance > hitRadius) continue;
+
+            if (!bestMatch || distance < bestMatch.distance) {
+                bestMatch = {
+                    line: segment.sourceLine ?? 0,
+                    length: Math.hypot(segment.to.x - segment.from.x, segment.to.y - segment.from.y),
+                    x: displayX,
+                    y: displayY,
+                    distance,
+                };
+            }
+        }
+
+        if (!bestMatch || bestMatch.line <= 0) return null;
+        return bestMatch;
+    };
 
     useEffect(() => {
         const canvas = canvasRef.current
@@ -56,6 +110,22 @@ export function Preview(props: PreviewProps) {
             props.markers,
         )
     }, [props.progress, props.activeSegments, props.markers, theme.palette.primary.main, theme.palette.text.secondary, settings.hidePenUp, settings.penWidth]);
+
+    const handlePointerMove = (event: React.PointerEvent<HTMLCanvasElement>) => {
+        const canvas = canvasRef.current;
+        if (!canvas) return;
+
+        const rect = canvas.getBoundingClientRect();
+        const displayX = event.clientX - rect.left;
+        const displayY = event.clientY - rect.top;
+        const scaleX = rect.width > 0 ? canvas.width / rect.width : 1;
+        const scaleY = rect.height > 0 ? canvas.height / rect.height : 1;
+        setHoveredSegment(findHoveredSegment(displayX * scaleX, displayY * scaleY, displayX, displayY));
+    };
+
+    const handlePointerLeave = () => {
+        setHoveredSegment(null);
+    };
 
     return (
         <Paper variant="outlined" sx={{ flex: 1, minWidth: 0, display: 'flex', flexDirection: 'column' }}>
@@ -117,8 +187,39 @@ export function Preview(props: PreviewProps) {
                 </Stack>
             </Box>
             <Divider />
-            <Box sx={{ flex: 1, minHeight: 0 }}>
-                <Box component="canvas" ref={canvasRef} sx={{ width: '100%', height: '100%', display: 'block' }} />
+            <Box sx={{ flex: 1, minHeight: 0, position: 'relative' }}>
+                <Box
+                    component="canvas"
+                    ref={canvasRef}
+                    onPointerMove={handlePointerMove}
+                    onPointerLeave={handlePointerLeave}
+                    sx={{ width: '100%', height: '100%', display: 'block' }}
+                />
+                {hoveredSegment && (
+                    <Box
+                        sx={{
+                            position: 'absolute',
+                            left: hoveredSegment.x,
+                            top: hoveredSegment.y,
+                            transform: 'translate(12px, 12px)',
+                            px: 1,
+                            py: 0.75,
+                            borderRadius: 1,
+                            backgroundColor: alpha(theme.palette.background.paper, 0.96),
+                            border: `1px solid ${alpha(theme.palette.divider, 0.9)}`,
+                            boxShadow: theme.shadows[3],
+                            pointerEvents: 'none',
+                            zIndex: 1,
+                        }}
+                    >
+                        <Typography variant="caption" display="block">
+                            Source line: {hoveredSegment.line}
+                        </Typography>
+                        <Typography variant="caption" display="block">
+                            Length: {hoveredSegment.length.toFixed(2)}
+                        </Typography>
+                    </Box>
+                )}
             </Box>
         </Paper>
     );
