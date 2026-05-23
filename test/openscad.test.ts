@@ -629,4 +629,142 @@ describe('openscad', () => {
       expect(result).toContain('translate([50, 50])')
     })
   })
+
+  describe('hull generation', () => {
+    it('should wrap polygon in hull() by default', () => {
+      const polygons: LogoPolygon[] = [
+        {
+          points: [{ x: 0, y: 0 }, { x: 10, y: 0 }, { x: 10, y: 10 }],
+          comments: [],
+          commentsByPointIndex: new Map(),
+        },
+      ]
+
+      const result = generateOpenScad(polygons)
+
+      expect(result).toContain('hull() {')
+      expect(result).toContain('polygon(points=[')
+      const hullIdx = result.indexOf('hull() {')
+      const polygonIdx = result.indexOf('polygon(points=[')
+      expect(hullIdx).toBeLessThan(polygonIdx)
+    })
+
+    it('should close hull() block after polygon', () => {
+      const polygons: LogoPolygon[] = [
+        {
+          points: [{ x: 0, y: 0 }, { x: 10, y: 0 }, { x: 10, y: 10 }],
+          comments: [],
+          commentsByPointIndex: new Map(),
+        },
+      ]
+
+      const result = generateOpenScad(polygons)
+
+      const lines = result.split('\n')
+      const lastLine = lines[lines.length - 1]
+      expect(lastLine).toBe('}')
+    })
+
+    it('should wrap circle in hull()', () => {
+      const polygons: LogoPolygon[] = [
+        {
+          points: [],
+          comments: [],
+          commentsByPointIndex: new Map(),
+          circleGeometry: { center: { x: 0, y: 0 }, radius: 10, fn: 20 },
+        },
+      ]
+
+      const result = generateOpenScad(polygons)
+
+      expect(result).toContain('hull() {')
+      const hullIdx = result.indexOf('hull() {')
+      const circleIdx = result.indexOf('circle(')
+      expect(hullIdx).toBeLessThan(circleIdx)
+    })
+
+    it('should NOT wrap comment-only polygon in hull()', () => {
+      const polygons: LogoPolygon[] = [
+        {
+          points: [{ x: 0, y: 0 }],
+          comments: [{ text: '// just a comment', line: 1 }],
+          commentsByPointIndex: new Map(),
+          commentOnly: true,
+        },
+      ]
+
+      const result = generateOpenScad(polygons)
+
+      expect(result).not.toContain('hull()')
+      expect(result).toContain('// just a comment')
+    })
+
+    it('should NOT wrap in hull() when generateHull=false', () => {
+      const polygons: LogoPolygon[] = [
+        {
+          points: [{ x: 0, y: 0 }, { x: 10, y: 0 }, { x: 10, y: 10 }],
+          comments: [],
+          commentsByPointIndex: new Map(),
+        },
+      ]
+
+      const result = generateOpenScad(polygons, 2, true, false, [], false)
+
+      expect(result).not.toContain('hull()')
+      expect(result).toContain('polygon(points=[')
+    })
+
+    it('should indent polygon content inside hull()', () => {
+      const polygons: LogoPolygon[] = [
+        {
+          points: [{ x: 0, y: 0 }, { x: 10, y: 0 }],
+          comments: [],
+          commentsByPointIndex: new Map(),
+        },
+      ]
+
+      const result = generateOpenScad(polygons, 2, true, false, [], true)
+      const lines = result.split('\n')
+
+      const polygonLine = lines.find(l => l.includes('polygon(points=['))
+      expect(polygonLine).toBeDefined()
+      expect(polygonLine!.startsWith('  ')).toBe(true)
+    })
+
+    it('should place poly-level comments before hull() block', () => {
+      const polygons: LogoPolygon[] = [
+        {
+          points: [{ x: 0, y: 0 }, { x: 10, y: 0 }],
+          comments: [{ text: '// header comment', line: 1 }],
+          commentsByPointIndex: new Map(),
+        },
+      ]
+
+      const result = generateOpenScad(polygons)
+
+      const commentIdx = result.indexOf('// header comment')
+      const hullIdx = result.indexOf('hull() {')
+      expect(commentIdx).toBeLessThan(hullIdx)
+    })
+
+    it('should wrap each of multiple polygons in hull()', () => {
+      const polygons: LogoPolygon[] = [
+        {
+          points: [{ x: 0, y: 0 }, { x: 10, y: 0 }],
+          comments: [],
+          commentsByPointIndex: new Map(),
+        },
+        {
+          points: [{ x: 20, y: 20 }, { x: 30, y: 20 }],
+          comments: [],
+          commentsByPointIndex: new Map(),
+        },
+      ]
+
+      const result = generateOpenScad(polygons)
+
+      const hullCount = (result.match(/hull\(\) \{/g) || []).length
+      expect(hullCount).toBe(2)
+    })
+  })
 })

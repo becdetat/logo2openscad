@@ -70,8 +70,9 @@ export default function App(props: AppProps) {
       settings.optimizeCircles,
       settings.commentVerbosity === 'verbose',
       settings.commentVerbosity === 'verbose' ? source.split('\n') : [],
+      settings.generateHull,
     ),
-    [runResult.polygons, settings.indentSpaces, settings.optimizeCircles, settings.commentVerbosity, source],
+    [runResult.polygons, settings.indentSpaces, settings.optimizeCircles, settings.commentVerbosity, settings.generateHull, source],
   )
 
   useEffect(() => {

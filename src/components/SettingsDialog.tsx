@@ -152,6 +152,25 @@ export function SettingsDialog(props: SettingsDialogProps) {
                             When enabled, each Logo source line is included as a comment in the OpenSCAD output alongside user comments. Default: {DEFAULTS.commentVerbosity === 'verbose' ? 'Enabled' : 'Disabled'}
                         </Typography>
                     </Stack>
+
+                    <Stack spacing={1}>
+                        <FormControlLabel
+                            control={
+                                <Checkbox
+                                    checked={localSettings.generateHull}
+                                    onChange={(e) => setLocalSettings({ ...localSettings, generateHull: e.target.checked })}
+                                />
+                            }
+                            label={
+                                <Typography variant="subtitle2">
+                                    Wrap geometry in <code>hull()</code>
+                                </Typography>
+                            }
+                        />
+                        <Typography variant="caption" color="text.secondary">
+                            When enabled, each <code>polygon()</code> or <code>circle()</code> is wrapped in a <code>hull()</code> command, which prevents issues with unclosed geometry. Default: {DEFAULTS.generateHull ? 'Enabled' : 'Disabled'}
+                        </Typography>
+                    </Stack>
                 </Stack>
             </DialogContent>
             <DialogActions>

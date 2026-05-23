@@ -11,6 +11,7 @@ export type Settings = {
   indentSpaces: number
   optimizeCircles: boolean
   commentVerbosity: CommentVerbosity
+  generateHull: boolean
 }
 
 const DEFAULTS: Settings = {
@@ -19,6 +20,7 @@ const DEFAULTS: Settings = {
   indentSpaces: 4,
   optimizeCircles: true,
   commentVerbosity: 'default',
+  generateHull: true,
 }
 
 const STORAGE_KEY = 'logo2openscad:settings'
@@ -34,6 +36,7 @@ function loadSettings(): Settings {
       indentSpaces: typeof parsed.indentSpaces === 'number' && parsed.indentSpaces > 0 ? parsed.indentSpaces : DEFAULTS.indentSpaces,
       optimizeCircles: typeof parsed.optimizeCircles === 'boolean' ? parsed.optimizeCircles : DEFAULTS.optimizeCircles,
       commentVerbosity: parsed.commentVerbosity === 'verbose' ? 'verbose' : DEFAULTS.commentVerbosity,
+      generateHull: typeof parsed.generateHull === 'boolean' ? parsed.generateHull : DEFAULTS.generateHull,
     }
   } catch {
     return { ...DEFAULTS }
