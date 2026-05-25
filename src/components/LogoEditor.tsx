@@ -1,7 +1,7 @@
 import { Box, Divider, IconButton, Paper, Stack, Typography } from "@mui/material";
 import HelpOutlineIcon from '@mui/icons-material/HelpOutline'
 import Editor from '@monaco-editor/react'
-import type { OnMount } from '@monaco-editor/react'
+import type { BeforeMount, OnMount } from '@monaco-editor/react'
 import { alpha, useTheme } from "@mui/material/styles";
 import type { ParseResult } from "../logo/types";
 import { Edit } from "@mui/icons-material";
@@ -11,6 +11,7 @@ export type LogoEditorProps = {
     source: string;
     parseResult: ParseResult;
     onSourceChange: (source: string) => void;
+    onEditorBeforeMount: BeforeMount;
     onEditorMount: OnMount;
     onHelpOpen: () => void;
     onRenameScriptClicked: () => void;
@@ -53,11 +54,12 @@ export function LogoEditor(props: LogoEditorProps) {
             <Box sx={{ flex: 1, minHeight: 0 }}>
                 <Editor
                     height="100%"
-                    defaultLanguage="plaintext"
+                    language="logo"
                     value={props.source}
                     onChange={(v) => props.onSourceChange(v ?? '')}
+                    beforeMount={props.onEditorBeforeMount}
                     onMount={props.onEditorMount}
-                    theme={theme.palette.mode === 'dark' ? 'vs-dark' : 'vs-light'}
+                    theme={theme.palette.mode === 'dark' ? 'logo-dark' : 'logo-light'}
                     options={{
                         minimap: { enabled: false },
                         fontSize: 13,

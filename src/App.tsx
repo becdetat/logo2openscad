@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
 import type * as Monaco from 'monaco-editor'
-import type { OnMount } from '@monaco-editor/react'
+import type { BeforeMount, OnMount } from '@monaco-editor/react'
+import { registerLogoLanguage } from './logo/monacoLanguage'
 import { Box, Divider, Typography } from '@mui/material'
 import { executeLogo } from './logo/interpreter'
 import { generateOpenScad } from './logo/openscad'
@@ -208,6 +209,10 @@ export default function App(props: AppProps) {
     decorationsRef.current = editor.deltaDecorations(decorationsRef.current, decorations)
   }, [parseResult.diagnostics])
 
+  const onEditorBeforeMount: BeforeMount = (monaco) => {
+    registerLogoLanguage(monaco)
+  }
+
   const onEditorMount: OnMount = (editor, monaco) => {
     editorRef.current = editor
     monacoRef.current = monaco
@@ -335,6 +340,7 @@ export default function App(props: AppProps) {
           source={source}
           parseResult={parseResult}
           onSourceChange={handleSourceChange}
+          onEditorBeforeMount={onEditorBeforeMount}
           onEditorMount={onEditorMount}
           onHelpOpen={handleHelpOpen}
           onRenameScriptClicked={() => handleRenameScript(activeScript.id)}
