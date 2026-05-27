@@ -93,16 +93,20 @@ export default function App(props: AppProps) {
   const decorationsRef = useRef<string[]>([])
   const runResultRef = useRef(runResult)
 
-  const handlePlay = () => {
+  const handlePlay = useCallback(() => {
     setActiveSegments(runResult.segments)
-    setProgress(0)
+    if (progress >= runResult.segments.length) setProgress(0)
     lastTsRef.current = null
     setIsPlaying(true)
-  }
+  }, [progress, runResult.segments])
 
   const handlePause = () => {
     setIsPlaying(false)
   }
+
+  const handleProgressChange = useCallback((value: number) => {
+    setProgress(value)
+  }, [])
 
   // Helper function to start preview with the latest segments from ref
   const startPreviewFromRef = () => {
@@ -383,6 +387,7 @@ export default function App(props: AppProps) {
           scriptName={activeScript.name}
           onPlay={handlePlay}
           onPause={handlePause}
+          onProgressChange={handleProgressChange}
           onSpeedChange={setSpeed}
           onSegmentClick={handleSegmentClick}
         />

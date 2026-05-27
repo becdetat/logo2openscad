@@ -1,5 +1,4 @@
 import { Box, Button, Checkbox, Divider, FormControlLabel, Paper, Slider, Stack, Typography } from "@mui/material";
-import PauseIcon from '@mui/icons-material/Pause'
 import PlayArrowIcon from '@mui/icons-material/PlayArrow'
 import { useEffect, useRef, useState } from "react";
 import { useSettings } from "../hooks/useSettings";
@@ -28,6 +27,7 @@ export type PreviewProps = {
     scriptName: string;
     onPlay: () => void;
     onPause: () => void;
+    onProgressChange: (progress: number) => void;
     onSpeedChange: (speed: number) => void;
     onSegmentClick?: (lineNumber: number) => void;
 }
@@ -223,15 +223,6 @@ export function Preview(props: PreviewProps) {
                         <Button
                             size="small"
                             variant="outlined"
-                            startIcon={<PauseIcon />}
-                            onClick={props.onPause}
-                            disabled={!props.isPlaying}
-                        >
-                            Pause
-                        </Button>
-                        <Button
-                            size="small"
-                            variant="outlined"
                             onClick={exportPng}
                             disabled={!props.hasSegments}
                         >
@@ -246,6 +237,27 @@ export function Preview(props: PreviewProps) {
                             SVG
                         </Button>
                     </Stack>
+                </Stack>
+            </Box>
+            <Divider />
+            <Box sx={{ px: 2, py: 1 }}>
+                <Stack direction="row" spacing={2} alignItems="center">
+                    <Slider
+                        min={0}
+                        max={props.activeSegments.length}
+                        step={1}
+                        value={Math.floor(props.progress)}
+                        disabled={!props.hasSegments}
+                        onChange={(_, v) => {
+                            const val = Array.isArray(v) ? v[0] : v;
+                            if (props.isPlaying) props.onPause();
+                            props.onProgressChange(val);
+                        }}
+                        sx={{ flex: 1 }}
+                    />
+                    <Typography variant="body2" sx={{ minWidth: 60, textAlign: 'right' }}>
+                        {Math.floor(props.progress)} / {props.activeSegments.length}
+                    </Typography>
                 </Stack>
             </Box>
             <Divider />
