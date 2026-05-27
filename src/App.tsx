@@ -380,6 +380,7 @@ export default function App(props: AppProps) {
           activeSegments={activeSegments}
           markers={runResult.markers}
           hasSegments={runResult.segments.length > 0}
+          scriptName={activeScript.name}
           onPlay={handlePlay}
           onPause={handlePause}
           onSpeedChange={setSpeed}

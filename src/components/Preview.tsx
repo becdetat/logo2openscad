@@ -7,7 +7,16 @@ import type { LogoSegment, Marker } from "../logo/types";
 import { alpha, useTheme } from "@mui/material/styles";
 import { createPreviewLayout, drawPreview, getRenderablePreviewSegments } from "../logo/drawPreview";
 import type { PreviewLayout } from "../logo/drawPreview";
+import { drawPreviewSvg } from "../logo/drawPreviewSvg";
 import { clamp } from "../helpers/clamp";
+
+function buildFilename(scriptName: string, ext: string): string {
+    const safe = scriptName.replace(/\s+/g, '_').replace(/[^\w.-]/g, '')
+    const now = new Date()
+    const pad = (n: number) => String(n).padStart(2, '0')
+    const ts = `${now.getFullYear()}-${pad(now.getMonth() + 1)}-${pad(now.getDate())}_${pad(now.getHours())}-${pad(now.getMinutes())}-${pad(now.getSeconds())}`
+    return `${safe}_${ts}.${ext}`
+}
 
 export type PreviewProps = {
     isPlaying: boolean;
@@ -16,6 +25,7 @@ export type PreviewProps = {
     activeSegments: LogoSegment[];
     markers: Marker[];
     hasSegments: boolean;
+    scriptName: string;
     onPlay: () => void;
     onPause: () => void;
     onSpeedChange: (speed: number) => void;
@@ -150,6 +160,38 @@ export function Preview(props: PreviewProps) {
         }
     };
 
+    const exportPng = () => {
+        const canvas = canvasRef.current;
+        if (!canvas) return;
+        const dataUrl = canvas.toDataURL('image/png');
+        const a = document.createElement('a');
+        a.href = dataUrl;
+        a.download = buildFilename(props.scriptName, 'png');
+        a.click();
+    };
+
+    const exportSvg = () => {
+        const svg = drawPreviewSvg(
+            props.activeSegments,
+            clamp(props.progress, 0, props.activeSegments.length),
+            {
+                penDown: theme.palette.primary.main,
+                penUp: theme.palette.text.secondary,
+                axis: alpha(theme.palette.text.secondary, 0.4),
+            },
+            settings.hidePenUp,
+            settings.penWidth,
+            props.markers,
+        );
+        const blob = new Blob([svg], { type: 'image/svg+xml' });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = buildFilename(props.scriptName, 'svg');
+        a.click();
+        URL.revokeObjectURL(url);
+    };
+
     return (
         <Paper variant="outlined" sx={{ flex: 1, minWidth: 0, display: 'flex', flexDirection: 'column' }}>
             <Box sx={{ px: 2, py: 1 }}>
@@ -186,6 +228,22 @@ export function Preview(props: PreviewProps) {
                             disabled={!props.isPlaying}
                         >
                             Pause
+                        </Button>
+                        <Button
+                            size="small"
+                            variant="outlined"
+                            onClick={exportPng}
+                            disabled={!props.hasSegments}
+                        >
+                            PNG
+                        </Button>
+                        <Button
+                            size="small"
+                            variant="outlined"
+                            onClick={exportSvg}
+                            disabled={!props.hasSegments}
+                        >
+                            SVG
                         </Button>
                     </Stack>
                 </Stack>
