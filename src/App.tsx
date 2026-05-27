@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState } from 'react'
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import type * as Monaco from 'monaco-editor'
 import type { BeforeMount, OnMount } from '@monaco-editor/react'
 import { registerLogoLanguage } from './logo/monacoLanguage'
@@ -224,6 +224,31 @@ export default function App(props: AppProps) {
     editor.addCommand(monaco.KeyMod.CtrlCmd | monaco.KeyCode.KeyS, startPreviewFromRef)
   }
 
+  const jumpDecorationsRef = useRef<string[]>([])
+
+  const handleSegmentClick = useCallback((lineNumber: number) => {
+    const editor = editorRef.current
+    const monaco = monacoRef.current
+    if (!editor || !monaco) return
+    if (lineNumber <= 0) return
+    const model = editor.getModel()
+    if (!model) return
+    if (lineNumber > model.getLineCount()) return
+    const content = model.getLineContent(lineNumber)
+    const column = Math.max(1, content.search(/\S/) + 1)
+    editor.revealLineInCenter(lineNumber)
+    editor.setPosition({ lineNumber, column })
+    editor.focus()
+    const ids = editor.deltaDecorations(jumpDecorationsRef.current, [{
+      range: new monaco.Range(lineNumber, 1, lineNumber, 1),
+      options: { isWholeLine: true, className: 'logo-jump-highlight' },
+    }])
+    jumpDecorationsRef.current = ids
+    setTimeout(() => {
+      jumpDecorationsRef.current = editor.deltaDecorations(jumpDecorationsRef.current, [])
+    }, 800)
+  }, [])
+
   const handleSettingsOpen = () => setSettingsOpen(true)
   
   const handleSettingsClose = () => {
@@ -358,6 +383,7 @@ export default function App(props: AppProps) {
           onPlay={handlePlay}
           onPause={handlePause}
           onSpeedChange={setSpeed}
+          onSegmentClick={handleSegmentClick}
         />
 
         <Divider orientation="vertical" flexItem />

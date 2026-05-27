@@ -72,3 +72,12 @@ button:focus-visible {
 .t2osLineError {
   background: var(--t2os-error-line-bg);
 }
+
+@keyframes jumpFade {
+  from { background-color: rgba(255, 220, 50, 0.35); }
+  to   { background-color: transparent; }
+}
+
+.logo-jump-highlight {
+  animation: jumpFade 0.8s ease-out forwards;
+}

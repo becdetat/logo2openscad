@@ -18,6 +18,7 @@ export type PreviewProps = {
     onPlay: () => void;
     onPause: () => void;
     onSpeedChange: (speed: number) => void;
+    onSegmentClick?: (lineNumber: number) => void;
 }
 
 export function Preview(props: PreviewProps) {
@@ -127,6 +128,12 @@ export function Preview(props: PreviewProps) {
         setHoveredSegment(null);
     };
 
+    const handleClick = () => {
+        if (hoveredSegment && hoveredSegment.line > 0) {
+            props.onSegmentClick?.(hoveredSegment.line);
+        }
+    };
+
     return (
         <Paper variant="outlined" sx={{ flex: 1, minWidth: 0, display: 'flex', flexDirection: 'column' }}>
             <Box sx={{ px: 2, py: 1 }}>
@@ -193,7 +200,8 @@ export function Preview(props: PreviewProps) {
                     ref={canvasRef}
                     onPointerMove={handlePointerMove}
                     onPointerLeave={handlePointerLeave}
-                    sx={{ width: '100%', height: '100%', display: 'block' }}
+                    onClick={handleClick}
+                    sx={{ width: '100%', height: '100%', display: 'block', cursor: hoveredSegment ? 'pointer' : 'default' }}
                 />
                 {hoveredSegment && (
                     <Box
