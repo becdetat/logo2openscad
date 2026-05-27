@@ -1,4 +1,4 @@
-import { Button, Checkbox, Dialog, DialogActions, DialogContent, DialogTitle, FormControlLabel, IconButton, Slider, Stack, TextField, Typography } from "@mui/material";
+import { Button, Checkbox, Dialog, DialogActions, DialogContent, DialogTitle, Divider, FormControlLabel, IconButton, Slider, Stack, TextField, Typography } from "@mui/material";
 import RestartAltIcon from '@mui/icons-material/RestartAlt'
 import { useEffect, useState } from "react";
 import { useSettings, type Settings } from "../hooks/useSettings";
@@ -7,6 +7,8 @@ export type SettingsDialogProps = {
     open: boolean;
     onClose: () => void;
     onResetPanelSizes: () => void;
+    onExportWorkspace: () => void;
+    onImportWorkspace: () => void;
 };
 
 export function SettingsDialog(props: SettingsDialogProps) {
@@ -176,6 +178,13 @@ export function SettingsDialog(props: SettingsDialogProps) {
                 <Button variant="outlined" onClick={props.onResetPanelSizes} sx={{ mt: 3 }}>
                     Reset panel sizes
                 </Button>
+
+                <Divider sx={{ my: 2 }} />
+                <Typography variant="subtitle2">Workspace</Typography>
+                <Stack direction="row" spacing={1} sx={{ mt: 1 }}>
+                    <Button variant="outlined" onClick={props.onExportWorkspace}>Export workspace</Button>
+                    <Button variant="outlined" onClick={props.onImportWorkspace}>Import workspace</Button>
+                </Stack>
             </DialogContent>
             <DialogActions>
                 <Button onClick={handleClose}>Close</Button>

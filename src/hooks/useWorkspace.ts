@@ -123,6 +123,14 @@ function isNameUnique(name: string, scripts: LogoScript[], excludeId?: string): 
   return !scripts.some(s => s.name === name && s.id !== excludeId)
 }
 
+export function generateImportedName(baseName: string, existingNames: string[]): string {
+  const candidate = `${baseName} (imported)`
+  if (!existingNames.includes(candidate)) return candidate
+  let n = 2
+  while (existingNames.includes(`${baseName} (imported ${n})`)) n++
+  return `${baseName} (imported ${n})`
+}
+
 export function useWorkspace() {
   const [workspace, setWorkspace] = useState<Workspace>(loadWorkspace)
   const [error, setError] = useState<string | null>(null)
@@ -253,6 +261,30 @@ export function useWorkspace() {
     }))
   }, [])
 
+  const mergeImportedScripts = useCallback((importedScripts: Partial<LogoScript>[]): number => {
+    const now = Date.now()
+    const existingNames = workspace.scripts.map(s => s.name)
+    const toAdd: LogoScript[] = []
+    for (const raw of importedScripts) {
+      if (typeof raw.name !== 'string' || !raw.name || typeof raw.content !== 'string' || !raw.content) continue
+      const allNames = [...existingNames, ...toAdd.map(s => s.name)]
+      const resolvedName = allNames.includes(raw.name)
+        ? generateImportedName(raw.name, allNames)
+        : raw.name
+      toAdd.push({
+        id: crypto.randomUUID(),
+        name: resolvedName,
+        content: raw.content,
+        createdAt: typeof raw.createdAt === 'number' ? raw.createdAt : now,
+        updatedAt: typeof raw.updatedAt === 'number' ? raw.updatedAt : now,
+      })
+    }
+    if (toAdd.length > 0) {
+      setWorkspace(prev => ({ ...prev, scripts: [...prev.scripts, ...toAdd] }))
+    }
+    return toAdd.length
+  }, [workspace])
+
   return {
     workspace,
     activeScript,
@@ -260,6 +292,7 @@ export function useWorkspace() {
     createScript,
     deleteScript,
     duplicateScript,
+    mergeImportedScripts,
     renameScript,
     selectScript,
     updateScriptContent,

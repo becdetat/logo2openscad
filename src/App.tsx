@@ -2,7 +2,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import type * as Monaco from 'monaco-editor'
 import type { BeforeMount, OnMount } from '@monaco-editor/react'
 import { registerLogoLanguage } from './logo/monacoLanguage'
-import { Box, Typography } from '@mui/material'
+import { Alert, Box, Snackbar, Typography } from '@mui/material'
 import { PanelGroup, Panel, type ImperativePanelGroupHandle } from 'react-resizable-panels'
 import { ResizeHandle } from './components/ResizeHandle'
 import { executeLogo } from './logo/interpreter'
@@ -29,7 +29,7 @@ export type AppProps = {
 
 export default function App(props: AppProps) {
   const { reloadSettings } = useSettings()
-  const { workspace, activeScript, error: workspaceError, createScript, deleteScript, duplicateScript, renameScript, selectScript, updateScriptContent } = useWorkspace()
+  const { workspace, activeScript, error: workspaceError, createScript, deleteScript, duplicateScript, mergeImportedScripts, renameScript, selectScript, updateScriptContent } = useWorkspace()
   const { collapsed, toggle: toggleSidebar } = useSidebarCollapsed()
   const { settings } = useSettings()
   
@@ -51,7 +51,11 @@ export default function App(props: AppProps) {
   const [duplicateDialogOpen, setDuplicateDialogOpen] = useState(false)
   const [scriptToDuplicate, setScriptToDuplicate] = useState<string | null>(null)
   const [defaultDuplicateScriptName, setDefaultDuplicateScriptName] = useState('')
-  
+
+  const [importSuccessMessage, setImportSuccessMessage] = useState<string | null>(null)
+  const [importErrorMessage, setImportErrorMessage] = useState<string | null>(null)
+  const fileInputRef = useRef<HTMLInputElement>(null)
+
   const source = activeScript.content
 
   const parseResult = useMemo(() => parseLogo(source), [source])
@@ -348,6 +352,71 @@ export default function App(props: AppProps) {
     }
   }
 
+  const handleExportWorkspace = useCallback(() => {
+    const envelope = {
+      appVersion: __APP_VERSION__,
+      exportedAt: Date.now(),
+      workspace,
+    }
+    const json = JSON.stringify(envelope, null, 2)
+    const blob = new Blob([json], { type: 'application/json' })
+    const url = URL.createObjectURL(blob)
+    const date = new Date().toISOString().slice(0, 10)
+    const a = document.createElement('a')
+    a.href = url
+    a.download = `logo2openscad-workspace-${date}.json`
+    document.body.appendChild(a)
+    a.click()
+    document.body.removeChild(a)
+    URL.revokeObjectURL(url)
+  }, [workspace])
+
+  const handleImportWorkspace = useCallback(() => {
+    fileInputRef.current?.click()
+  }, [])
+
+  const handleImportFileSelected = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0]
+    if (!file) return
+    const reader = new FileReader()
+    reader.onload = () => {
+      const text = reader.result
+      if (typeof text !== 'string' || !text) {
+        setImportErrorMessage('Could not read the file.')
+        return
+      }
+      let parsed: unknown
+      try {
+        parsed = JSON.parse(text)
+      } catch {
+        setImportErrorMessage('The file is not valid JSON.')
+        return
+      }
+      if (typeof parsed !== 'object' || parsed === null || !('workspace' in parsed)) {
+        setImportErrorMessage('This does not appear to be a logo2openscad export file.')
+        return
+      }
+      const ws = (parsed as Record<string, unknown>).workspace
+      if (typeof ws !== 'object' || ws === null || !('scripts' in ws) || !Array.isArray((ws as Record<string, unknown>).scripts)) {
+        setImportErrorMessage('The export file contains no scripts array.')
+        return
+      }
+      const scripts = (ws as Record<string, unknown>).scripts as Partial<{ name: unknown; content: unknown; createdAt: unknown; updatedAt: unknown }>[]
+      const added = mergeImportedScripts(scripts)
+      if (added === 0) {
+        setImportSuccessMessage('No new scripts were imported.')
+      } else {
+        setImportSuccessMessage(`Imported ${added} script(s)`)
+      }
+      if (fileInputRef.current) fileInputRef.current.value = ''
+    }
+    reader.onerror = () => {
+      setImportErrorMessage('Could not read the file.')
+      if (fileInputRef.current) fileInputRef.current.value = ''
+    }
+    reader.readAsText(file)
+  }, [mergeImportedScripts])
+
   return (
     <Box sx={{ height: '100vh', display: 'flex', flexDirection: 'column' }}>
       <Box sx={{ flex: 1, minHeight: 0, display: 'flex' }}>
@@ -459,7 +528,20 @@ export default function App(props: AppProps) {
         </PanelGroup>
       </Box>
 
-      <SettingsDialog open={settingsOpen} onClose={handleSettingsClose} onResetPanelSizes={handleResetPanelSizes} />
+      <SettingsDialog
+        open={settingsOpen}
+        onClose={handleSettingsClose}
+        onResetPanelSizes={handleResetPanelSizes}
+        onExportWorkspace={handleExportWorkspace}
+        onImportWorkspace={handleImportWorkspace}
+      />
+      <input
+        type="file"
+        accept=".json"
+        style={{ display: 'none' }}
+        ref={fileInputRef}
+        onChange={handleImportFileSelected}
+      />
       <HelpDialog open={helpOpen} onClose={handleHelpClose} />
       
       <ScriptDialog
@@ -506,6 +588,20 @@ export default function App(props: AppProps) {
         message={workspaceError}
         onClose={() => {}}
       />
+      <ErrorSnackbar
+        message={importErrorMessage}
+        onClose={() => setImportErrorMessage(null)}
+      />
+      <Snackbar
+        open={!!importSuccessMessage}
+        autoHideDuration={4000}
+        onClose={() => setImportSuccessMessage(null)}
+        anchorOrigin={{ vertical: 'bottom', horizontal: 'center' }}
+      >
+        <Alert onClose={() => setImportSuccessMessage(null)} severity="success" sx={{ width: '100%' }}>
+          {importSuccessMessage}
+        </Alert>
+      </Snackbar>
     </Box>
   )
 }
