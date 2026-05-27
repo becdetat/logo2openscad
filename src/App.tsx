@@ -2,7 +2,9 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import type * as Monaco from 'monaco-editor'
 import type { BeforeMount, OnMount } from '@monaco-editor/react'
 import { registerLogoLanguage } from './logo/monacoLanguage'
-import { Box, Divider, Typography } from '@mui/material'
+import { Box, Typography } from '@mui/material'
+import { PanelGroup, Panel, type ImperativePanelGroupHandle } from 'react-resizable-panels'
+import { ResizeHandle } from './components/ResizeHandle'
 import { executeLogo } from './logo/interpreter'
 import { generateOpenScad } from './logo/openscad'
 import { parseLogo } from './logo/parser'
@@ -91,6 +93,7 @@ export default function App(props: AppProps) {
   const monacoRef = useRef<typeof Monaco | null>(null)
   const editorRef = useRef<Monaco.editor.IStandaloneCodeEditor | null>(null)
   const decorationsRef = useRef<string[]>([])
+  const panelGroupRef = useRef<ImperativePanelGroupHandle>(null)
   const runResultRef = useRef(runResult)
 
   const handlePlay = useCallback(() => {
@@ -253,6 +256,11 @@ export default function App(props: AppProps) {
     }, 800)
   }, [])
 
+  const handleResetPanelSizes = useCallback(() => {
+    localStorage.removeItem('react-resizable-panels:logo2openscad-panels')
+    panelGroupRef.current?.setLayout([33.33, 33.33, 33.33])
+  }, [])
+
   const handleSettingsOpen = () => setSettingsOpen(true)
   
   const handleSettingsClose = () => {
@@ -364,44 +372,60 @@ export default function App(props: AppProps) {
           onDeleteScript={handleDeleteScript}
         />
         
-        <LogoEditor
-          scriptName={activeScript.name}
-          source={source}
-          parseResult={parseResult}
-          onSourceChange={handleSourceChange}
-          onEditorBeforeMount={onEditorBeforeMount}
-          onEditorMount={onEditorMount}
-          onHelpOpen={handleHelpOpen}
-          onRenameScriptClicked={() => handleRenameScript(activeScript.id)}
-        />
-
-        <Divider orientation="vertical" flexItem />
-
-        <Preview
-          isPlaying={isPlaying}
-          speed={speed}
-          progress={progress}
-          activeSegments={activeSegments}
-          markers={runResult.markers}
-          hasSegments={runResult.segments.length > 0}
-          scriptName={activeScript.name}
-          onPlay={handlePlay}
-          onPause={handlePause}
-          onProgressChange={handleProgressChange}
-          onSpeedChange={setSpeed}
-          onSegmentClick={handleSegmentClick}
-        />
-
-        <Divider orientation="vertical" flexItem />
-        <OpenScadEditor 
-          openScad={openScad} 
-          handleSettingsOpen={handleSettingsOpen}
-          toggleDarkMode={props.toggleDarkMode}
-          isDarkMode={props.isDarkMode}
-        />
+        <PanelGroup
+          ref={panelGroupRef}
+          direction="horizontal"
+          autoSaveId="logo2openscad-panels"
+          style={{ flex: 1, minWidth: 0 }}
+        >
+          <Panel id="editor" defaultSize={33.33} minSize={20}>
+            <Box sx={{ height: '100%', display: 'flex' }}>
+              <LogoEditor
+                scriptName={activeScript.name}
+                source={source}
+                parseResult={parseResult}
+                onSourceChange={handleSourceChange}
+                onEditorBeforeMount={onEditorBeforeMount}
+                onEditorMount={onEditorMount}
+                onHelpOpen={handleHelpOpen}
+                onRenameScriptClicked={() => handleRenameScript(activeScript.id)}
+              />
+            </Box>
+          </Panel>
+          <ResizeHandle />
+          <Panel id="preview" defaultSize={33.33} minSize={20}>
+            <Box sx={{ height: '100%', display: 'flex' }}>
+              <Preview
+                isPlaying={isPlaying}
+                speed={speed}
+                progress={progress}
+                activeSegments={activeSegments}
+                markers={runResult.markers}
+                hasSegments={runResult.segments.length > 0}
+                scriptName={activeScript.name}
+                onPlay={handlePlay}
+                onPause={handlePause}
+                onProgressChange={handleProgressChange}
+                onSpeedChange={setSpeed}
+                onSegmentClick={handleSegmentClick}
+              />
+            </Box>
+          </Panel>
+          <ResizeHandle />
+          <Panel id="openscad" defaultSize={33.33} minSize={20}>
+            <Box sx={{ height: '100%', display: 'flex' }}>
+              <OpenScadEditor
+                openScad={openScad}
+                handleSettingsOpen={handleSettingsOpen}
+                toggleDarkMode={props.toggleDarkMode}
+                isDarkMode={props.isDarkMode}
+              />
+            </Box>
+          </Panel>
+        </PanelGroup>
       </Box>
 
-      <SettingsDialog open={settingsOpen} onClose={handleSettingsClose} />
+      <SettingsDialog open={settingsOpen} onClose={handleSettingsClose} onResetPanelSizes={handleResetPanelSizes} />
       <HelpDialog open={helpOpen} onClose={handleHelpClose} />
       
       <ScriptDialog

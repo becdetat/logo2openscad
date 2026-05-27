@@ -6,6 +6,7 @@ import { useSettings, type Settings } from "../hooks/useSettings";
 export type SettingsDialogProps = {
     open: boolean;
     onClose: () => void;
+    onResetPanelSizes: () => void;
 };
 
 export function SettingsDialog(props: SettingsDialogProps) {
@@ -172,6 +173,9 @@ export function SettingsDialog(props: SettingsDialogProps) {
                         </Typography>
                     </Stack>
                 </Stack>
+                <Button variant="outlined" onClick={props.onResetPanelSizes} sx={{ mt: 3 }}>
+                    Reset panel sizes
+                </Button>
             </DialogContent>
             <DialogActions>
                 <Button onClick={handleClose}>Close</Button>
