@@ -1,6 +1,7 @@
-import { Box, Button, Checkbox, Divider, FormControlLabel, Paper, Slider, Stack, Typography } from "@mui/material";
+import { Box, Button, Checkbox, Divider, FormControlLabel, IconButton, Paper, Slider, Stack, Tooltip, Typography } from "@mui/material";
 import PlayArrowIcon from '@mui/icons-material/PlayArrow'
-import { useEffect, useRef, useState } from "react";
+import ZoomOutMapIcon from '@mui/icons-material/ZoomOutMap'
+import { useCallback, useEffect, useRef, useState } from "react";
 import { useSettings } from "../hooks/useSettings";
 import type { LogoSegment, Marker } from "../logo/types";
 import { alpha, useTheme } from "@mui/material/styles";
@@ -25,6 +26,7 @@ export type PreviewProps = {
     markers: Marker[];
     hasSegments: boolean;
     scriptName: string;
+    activeScriptId: string;
     onPlay: () => void;
     onPause: () => void;
     onProgressChange: (progress: number) => void;
@@ -39,6 +41,78 @@ export function Preview(props: PreviewProps) {
     const { settings, setSettings } = useSettings();
     const [hoveredSegment, setHoveredSegment] = useState<{ line: number; length: number; x: number; y: number; logoX: number; logoY: number } | null>(null);
     const [coordCopied, setCoordCopied] = useState(false);
+
+    // Zoom / pan state
+    const [zoom, setZoom] = useState(1);
+    const [pan, setPan] = useState<{ x: number; y: number }>({ x: 0, y: 0 });
+    const [isDragging, setIsDragging] = useState(false);
+
+    // Refs for use in event listeners / effects that can't capture stale state
+    const zoomRef = useRef(zoom);
+    const panRef = useRef(pan);
+    zoomRef.current = zoom;
+    panRef.current = pan;
+
+    const isDraggingRef = useRef(false);
+    const dragStartRef = useRef<{ x: number; y: number } | null>(null);
+    const hasDraggedRef = useRef(false);
+
+    // Per-script zoom/pan persistence
+    const savedViewRef = useRef<Map<string, { zoom: number; pan: { x: number; y: number } }>>(new Map());
+    const liveViewRef = useRef({ zoom, pan });
+    liveViewRef.current = { zoom, pan };
+
+    useEffect(() => {
+        const saved = savedViewRef.current.get(props.activeScriptId)
+        setZoom(saved?.zoom ?? 1)
+        setPan(saved?.pan ?? { x: 0, y: 0 })
+        return () => {
+            savedViewRef.current.set(props.activeScriptId, liveViewRef.current)
+        }
+    }, [props.activeScriptId])
+
+    const isAtDefault = zoom === 1 && pan.x === 0 && pan.y === 0;
+
+    const resetView = useCallback(() => {
+        setZoom(1);
+        setPan({ x: 0, y: 0 });
+    }, []);
+
+    // Non-passive wheel listener for zoom
+    useEffect(() => {
+        const canvas = canvasRef.current;
+        if (!canvas) return;
+        const handleWheel = (e: WheelEvent) => {
+            e.preventDefault();
+            const currentZoom = zoomRef.current;
+            const currentPan = panRef.current;
+            const newZoom = clamp(currentZoom * (1 - e.deltaY * 0.001), 0.1, 50);
+            const rect = canvas.getBoundingClientRect();
+            const cx = (e.clientX - rect.left) * (canvas.width / rect.width);
+            const cy = (e.clientY - rect.top) * (canvas.height / rect.height);
+            const centerX = canvas.width / 2;
+            const centerY = canvas.height / 2;
+            const ratio = newZoom / currentZoom;
+            setZoom(newZoom);
+            setPan({
+                x: (cx - centerX) * (1 - ratio) + currentPan.x * ratio,
+                y: (cy - centerY) * (1 - ratio) + currentPan.y * ratio,
+            });
+        };
+        canvas.addEventListener('wheel', handleWheel, { passive: false });
+        return () => canvas.removeEventListener('wheel', handleWheel);
+    }, []);
+
+    const toCanvasCoords = useCallback((e: React.PointerEvent<HTMLCanvasElement>) => {
+        const canvas = canvasRef.current!;
+        const rect = canvas.getBoundingClientRect();
+        const scaleX = rect.width > 0 ? canvas.width / rect.width : 1;
+        const scaleY = rect.height > 0 ? canvas.height / rect.height : 1;
+        return {
+            x: (e.clientX - rect.left) * scaleX,
+            y: (e.clientY - rect.top) * scaleY,
+        };
+    }, []);
 
     const findHoveredSegment = (layout: PreviewLayout, canvasX: number, canvasY: number, displayX: number, displayY: number) => {
         if (props.activeSegments.length === 0) return null;
@@ -118,12 +192,33 @@ export function Preview(props: PreviewProps) {
             settings.penWidth * dpr,
             dpr,
             props.markers,
+            zoom,
+            pan,
         )
-    }, [props.progress, props.activeSegments, props.markers, theme.palette.primary.main, theme.palette.text.secondary, settings.hidePenUp, settings.penWidth]);
+    }, [props.progress, props.activeSegments, props.markers, theme.palette.primary.main, theme.palette.text.secondary, settings.hidePenUp, settings.penWidth, zoom, pan]);
+
+    const handlePointerDown = (event: React.PointerEvent<HTMLCanvasElement>) => {
+        isDraggingRef.current = true;
+        setIsDragging(true);
+        hasDraggedRef.current = false;
+        dragStartRef.current = toCanvasCoords(event);
+        event.currentTarget.setPointerCapture(event.pointerId);
+    };
 
     const handlePointerMove = (event: React.PointerEvent<HTMLCanvasElement>) => {
         const canvas = canvasRef.current;
         if (!canvas) return;
+
+        if (isDraggingRef.current && dragStartRef.current) {
+            const current = toCanvasCoords(event);
+            const dx = current.x - dragStartRef.current.x;
+            const dy = current.y - dragStartRef.current.y;
+            if (Math.abs(dx) > 1 || Math.abs(dy) > 1) hasDraggedRef.current = true;
+            setPan(prev => ({ x: prev.x + dx, y: prev.y + dy }));
+            dragStartRef.current = current;
+            setHoveredSegment(null);
+            return;
+        }
 
         const rect = canvas.getBoundingClientRect();
         const displayX = event.clientX - rect.left;
@@ -133,7 +228,7 @@ export function Preview(props: PreviewProps) {
         const canvasX = displayX * scaleX;
         const canvasY = displayY * scaleY;
 
-        const layout = createPreviewLayout(canvas, props.activeSegments);
+        const layout = createPreviewLayout(canvas, props.activeSegments, zoom, pan);
         layoutRef.current = layout;
 
         if (!layout) {
@@ -150,12 +245,25 @@ export function Preview(props: PreviewProps) {
         }
     };
 
+    const handlePointerUp = () => {
+        isDraggingRef.current = false;
+        setIsDragging(false);
+        dragStartRef.current = null;
+    };
+
     const handlePointerLeave = () => {
+        isDraggingRef.current = false;
+        setIsDragging(false);
+        dragStartRef.current = null;
         setHoveredSegment(null);
     };
 
+    const handleDoubleClick = () => {
+        resetView();
+    };
+
     const handleClick = () => {
-        if (hoveredSegment && hoveredSegment.line > 0) {
+        if (!hasDraggedRef.current && hoveredSegment && hoveredSegment.line > 0) {
             props.onSegmentClick?.(hoveredSegment.line);
         }
     };
@@ -211,6 +319,13 @@ export function Preview(props: PreviewProps) {
                         />
                     </Stack>
                     <Stack direction="row" spacing={1} alignItems="center">
+                        {!isAtDefault && (
+                            <Tooltip title="Reset zoom">
+                                <IconButton size="small" onClick={resetView} aria-label="Reset zoom">
+                                    <ZoomOutMapIcon fontSize="small" />
+                                </IconButton>
+                            </Tooltip>
+                        )}
                         <Button
                             size="small"
                             variant="contained"
@@ -284,10 +399,14 @@ export function Preview(props: PreviewProps) {
                 <Box
                     component="canvas"
                     ref={canvasRef}
+                    onPointerDown={handlePointerDown}
                     onPointerMove={handlePointerMove}
+                    onPointerUp={handlePointerUp}
                     onPointerLeave={handlePointerLeave}
+                    onPointerCancel={handlePointerUp}
+                    onDoubleClick={handleDoubleClick}
                     onClick={handleClick}
-                    sx={{ width: '100%', height: '100%', display: 'block', cursor: hoveredSegment ? 'pointer' : 'default' }}
+                    sx={{ width: '100%', height: '100%', display: 'block', cursor: isDragging ? 'grabbing' : 'grab' }}
                 />
                 {hoveredSegment && (
                     <Box

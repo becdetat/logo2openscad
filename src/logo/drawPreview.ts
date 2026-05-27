@@ -13,6 +13,8 @@ export type RenderablePreviewSegment = {
 export function createPreviewLayout(
   canvas: Pick<HTMLCanvasElement, 'width' | 'height'>,
   segments: LogoSegment[],
+  zoom: number = 1,
+  pan: { x: number; y: number } = { x: 0, y: 0 },
 ): PreviewLayout | null {
   if (segments.length === 0) return null
 
@@ -39,12 +41,12 @@ export function createPreviewLayout(
 
   return {
     toScreen: (p: { x: number; y: number }) => ({
-      x: centerX + (p.x - midX) * scale,
-      y: centerY - (p.y - midY) * scale,
+      x: centerX + (p.x - midX) * scale * zoom + pan.x,
+      y: centerY - (p.y - midY) * scale * zoom + pan.y,
     }),
     fromScreen: (p: { x: number; y: number }) => ({
-      x: (p.x - centerX) / scale + midX,
-      y: midY - (p.y - centerY) / scale,
+      x: (p.x - centerX - pan.x) / (scale * zoom) + midX,
+      y: midY - (p.y - centerY - pan.y) / (scale * zoom),
     }),
   }
 }
@@ -86,6 +88,8 @@ export function drawPreview(
   penWidth: number = 2,
   dpr: number = 1,
   markers: Marker[] = [],
+  zoom: number = 1,
+  pan: { x: number; y: number } = { x: 0, y: 0 },
 ) {
   const width = canvas.width
   const height = canvas.height
@@ -93,7 +97,7 @@ export function drawPreview(
   ctx.clearRect(0, 0, width, height)
 
   if (segments.length === 0) return
-  const layout = createPreviewLayout(canvas, segments)
+  const layout = createPreviewLayout(canvas, segments, zoom, pan)
   if (!layout) return
   const { toScreen } = layout
   const renderableSegments = getRenderablePreviewSegments(segments, visibleSegments, hidePenUp)
