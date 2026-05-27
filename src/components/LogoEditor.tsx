@@ -1,10 +1,13 @@
+import { useState } from "react";
 import { Box, Divider, IconButton, Paper, Stack, Typography } from "@mui/material";
 import HelpOutlineIcon from '@mui/icons-material/HelpOutline'
+import StyleIcon from '@mui/icons-material/Style'
 import Editor from '@monaco-editor/react'
 import type { BeforeMount, OnMount } from '@monaco-editor/react'
 import { alpha, useTheme } from "@mui/material/styles";
 import type { ParseResult } from "../logo/types";
 import { Edit } from "@mui/icons-material";
+import { SnippetPanel } from "./SnippetPanel";
 
 export type LogoEditorProps = {
     scriptName: string;
@@ -15,10 +18,13 @@ export type LogoEditorProps = {
     onEditorMount: OnMount;
     onHelpOpen: () => void;
     onRenameScriptClicked: () => void;
+    onInsertSnippet: (code: string) => void;
+    isDarkMode: boolean;
 }
 
 export function LogoEditor(props: LogoEditorProps) {
     const theme = useTheme();
+    const [snippetAnchorEl, setSnippetAnchorEl] = useState<HTMLElement | null>(null);
 
     return (
         <Paper
@@ -45,11 +51,25 @@ export function LogoEditor(props: LogoEditorProps) {
                         </IconButton>
                     </Typography>
                     <small><kbd>Ctrl</kbd>+<kbd>Enter</kbd> or <kbd>Ctrl</kbd>+<kbd>S</kbd> to preview</small>
+                    <IconButton
+                        aria-label="Snippets"
+                        onClick={(e) => setSnippetAnchorEl(e.currentTarget)}
+                        size="small"
+                    >
+                        <StyleIcon fontSize="small" />
+                    </IconButton>
                     <IconButton aria-label="Help" onClick={props.onHelpOpen} size="small">
                         <HelpOutlineIcon fontSize="small" />
                     </IconButton>
                 </Stack>
             </Box>
+            <SnippetPanel
+                anchorEl={snippetAnchorEl}
+                open={Boolean(snippetAnchorEl)}
+                onClose={() => setSnippetAnchorEl(null)}
+                onInsert={props.onInsertSnippet}
+                isDarkMode={props.isDarkMode}
+            />
             <Divider />
             <Box sx={{ flex: 1, minHeight: 0 }}>
                 <Editor

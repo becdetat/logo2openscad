@@ -236,6 +236,19 @@ export default function App(props: AppProps) {
 
   const jumpDecorationsRef = useRef<string[]>([])
 
+  const insertSnippet = useCallback((code: string) => {
+    const editor = editorRef.current
+    const monaco = monacoRef.current
+    if (!editor || !monaco) return
+    const sel = editor.getSelection()
+    const pos = editor.getPosition()
+    const range = sel && !sel.isEmpty()
+      ? sel
+      : new monaco.Range(pos!.lineNumber, pos!.column, pos!.lineNumber, pos!.column)
+    editor.executeEdits('snippet-insert', [{ range, text: code, forceMoveMarkers: true }])
+    editor.focus()
+  }, [])
+
   const handleSegmentClick = useCallback((lineNumber: number) => {
     const editor = editorRef.current
     const monaco = monacoRef.current
@@ -408,6 +421,8 @@ export default function App(props: AppProps) {
                 onEditorMount={onEditorMount}
                 onHelpOpen={handleHelpOpen}
                 onRenameScriptClicked={() => handleRenameScript(activeScript.id)}
+                onInsertSnippet={insertSnippet}
+                isDarkMode={props.isDarkMode}
               />
             </Box>
           </Panel>
