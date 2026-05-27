@@ -9,7 +9,7 @@ import { executeLogo } from './logo/interpreter'
 import { generateOpenScad } from './logo/openscad'
 import { parseLogo } from './logo/parser'
 import { useSettings } from './hooks/useSettings'
-import { useWorkspace, generateUntitledName } from './hooks/useWorkspace'
+import { useWorkspace, generateUntitledName, generateDuplicateName } from './hooks/useWorkspace'
 import { useSidebarCollapsed } from './hooks/useSidebarCollapsed'
 import { HelpDialog } from './components/HelpDialog'
 import { SettingsDialog } from './components/SettingsDialog'
@@ -29,7 +29,7 @@ export type AppProps = {
 
 export default function App(props: AppProps) {
   const { reloadSettings } = useSettings()
-  const { workspace, activeScript, error: workspaceError, createScript, deleteScript, renameScript, selectScript, updateScriptContent } = useWorkspace()
+  const { workspace, activeScript, error: workspaceError, createScript, deleteScript, duplicateScript, renameScript, selectScript, updateScriptContent } = useWorkspace()
   const { collapsed, toggle: toggleSidebar } = useSidebarCollapsed()
   const { settings } = useSettings()
   
@@ -48,6 +48,9 @@ export default function App(props: AppProps) {
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false)
   const [scriptToRename, setScriptToRename] = useState<string | null>(null)
   const [scriptToDelete, setScriptToDelete] = useState<string | null>(null)
+  const [duplicateDialogOpen, setDuplicateDialogOpen] = useState(false)
+  const [scriptToDuplicate, setScriptToDuplicate] = useState<string | null>(null)
+  const [defaultDuplicateScriptName, setDefaultDuplicateScriptName] = useState('')
   
   const source = activeScript.content
 
@@ -310,6 +313,21 @@ export default function App(props: AppProps) {
     setScriptToDelete(scriptId)
     setDeleteDialogOpen(true)
   }
+
+  const handleDuplicateScript = (scriptId: string) => {
+    const script = workspace.scripts.find(s => s.id === scriptId)
+    if (!script) return
+    setScriptToDuplicate(scriptId)
+    setDefaultDuplicateScriptName(generateDuplicateName(script.name, workspace.scripts))
+    setDuplicateDialogOpen(true)
+  }
+
+  const handleDuplicateConfirm = (name: string) => {
+    if (scriptToDuplicate) {
+      duplicateScript(scriptToDuplicate, name)
+      if (!collapsed) toggleSidebar()
+    }
+  }
   
   const handleDeleteConfirm = () => {
     if (scriptToDelete) {
@@ -369,6 +387,7 @@ export default function App(props: AppProps) {
           onSelectScript={selectScript}
           onCreateScript={handleCreateScript}
           onRenameScript={handleRenameScript}
+          onDuplicateScript={handleDuplicateScript}
           onDeleteScript={handleDeleteScript}
         />
         
@@ -447,6 +466,17 @@ export default function App(props: AppProps) {
         onConfirm={handleRenameConfirm}
       />
       
+      <ScriptDialog
+        open={duplicateDialogOpen}
+        title="Duplicate Script"
+        initialValue={defaultDuplicateScriptName}
+        onClose={() => {
+          setDuplicateDialogOpen(false)
+          setScriptToDuplicate(null)
+        }}
+        onConfirm={handleDuplicateConfirm}
+      />
+
       <DeleteScriptDialog
         open={deleteDialogOpen}
         scriptName={scriptToDelete ? workspace.scripts.find(s => s.id === scriptToDelete)?.name ?? '' : ''}

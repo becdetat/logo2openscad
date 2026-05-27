@@ -28,6 +28,7 @@ export type WorkspaceSidebarProps = {
   onSelectScript: (scriptId: string) => void
   onCreateScript: () => void
   onRenameScript: (scriptId: string) => void
+  onDuplicateScript: (scriptId: string) => void
   onDeleteScript: (scriptId: string) => void
 }
 
@@ -54,6 +55,13 @@ export function WorkspaceSidebar(props: WorkspaceSidebarProps) {
   const handleRename = () => {
     if (contextMenu) {
       props.onRenameScript(contextMenu.scriptId)
+      handleCloseContextMenu()
+    }
+  }
+
+  const handleDuplicate = () => {
+    if (contextMenu) {
+      props.onDuplicateScript(contextMenu.scriptId)
       handleCloseContextMenu()
     }
   }
@@ -170,6 +178,7 @@ export function WorkspaceSidebar(props: WorkspaceSidebarProps) {
         }
       >
         <MenuItem onClick={handleRename}>Rename</MenuItem>
+        <MenuItem onClick={handleDuplicate}>Duplicate</MenuItem>
         <MenuItem onClick={handleDelete}>Delete</MenuItem>
       </Menu>
     </>

@@ -93,6 +93,15 @@ function saveWorkspace(workspace: Workspace): string | null {
   }
 }
 
+export function generateDuplicateName(sourceName: string, scripts: LogoScript[]): string {
+  const existingNames = scripts.map(s => s.name)
+  const base = `${sourceName} copy`
+  if (!existingNames.includes(base)) return base
+  let n = 2
+  while (existingNames.includes(`${base} ${n}`)) n++
+  return `${base} ${n}`
+}
+
 export function generateUntitledName(existingNames: string[]): string {
   const untitledPattern = /^Untitled(\d+)$/
   let maxNumber = 0
@@ -208,6 +217,31 @@ export function useWorkspace() {
     }))
   }, [])
 
+  const duplicateScript = useCallback((scriptId: string, newName: string) => {
+    setWorkspace(prev => {
+      const source = prev.scripts.find(s => s.id === scriptId)
+      if (!source) throw new Error('Script not found')
+      const trimmedName = newName.trim()
+      if (!trimmedName) throw new Error('Script name cannot be empty')
+      if (!isNameUnique(trimmedName, prev.scripts)) {
+        throw new Error('A script with this name already exists')
+      }
+      const now = Date.now()
+      const newScript: LogoScript = {
+        id: crypto.randomUUID(),
+        name: trimmedName,
+        content: source.content,
+        createdAt: now,
+        updatedAt: now,
+      }
+      return {
+        ...prev,
+        scripts: [...prev.scripts, newScript],
+        activeScriptId: newScript.id,
+      }
+    })
+  }, [])
+
   const updateScriptContent = useCallback((scriptId: string, content: string) => {
     setWorkspace(prev => ({
       ...prev,
@@ -225,6 +259,7 @@ export function useWorkspace() {
     error,
     createScript,
     deleteScript,
+    duplicateScript,
     renameScript,
     selectScript,
     updateScriptContent,

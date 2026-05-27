@@ -65,7 +65,7 @@ export function ScriptDialog(props: ScriptDialogProps) {
       <DialogActions>
         <Button onClick={props.onClose}>Cancel</Button>
         <Button onClick={handleConfirm} variant="contained">
-          {props.title.includes('Rename') ? 'Rename' : 'Create'}
+          {props.title.includes('Rename') ? 'Rename' : props.title.includes('Duplicate') ? 'Duplicate' : 'Create'}
         </Button>
       </DialogActions>
     </Dialog>
