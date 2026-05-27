@@ -10,14 +10,13 @@ When the user hovers over the preview canvas and the cursor is within the segmen
 
 The coordinate is derived by applying the inverse of the canvas-to-Logo-space transform to the raw mouse position. This means the coordinate reflects where the cursor is on the canvas — not the nearest point on the segment — which is more useful for placing new commands at arbitrary positions.
 
-The coordinate is formatted as `x: 123.45, y: 67.89` with fixed 2 decimal places. Clicking anywhere on the coordinate line copies the bare value `123.45, 67.89` to the clipboard, ready to paste into a `SETXY` or `EXTMARKER` command.
+The coordinate is formatted as `x: 123.45, y: 67.89` with fixed 2 decimal places.
 
 The readout only appears when a segment is being hovered (i.e. cursor is within the existing 8px hit-radius). When no segment is nearby, the tooltip does not appear and neither does the coordinate.
 
 ## User stories
 
 - As a user, I want to see the Logo-space coordinate at my cursor when hovering a segment, so that I can quickly determine the values to use in `SETXY`, `EXTMARKER`, or other coordinate-based commands without trial and error.
-- As a user, I want to click the coordinate in the tooltip to copy it to the clipboard, so that I can paste it directly into my script without retyping numbers.
 
 ## Key decisions
 
@@ -27,8 +26,6 @@ The readout only appears when a segment is being hovered (i.e. cursor is within 
 | When to show the coordinate | Only when a segment is already hovered (within 8px hit-radius). Avoids a persistent readout cluttering the canvas and is consistent with the existing tooltip behaviour. |
 | Display format | Labelled: `x: 123.45, y: 67.89`. Clear and unambiguous. |
 | Coordinate precision | Fixed 2 decimal places. Short enough to read at a glance; Logo scripts rarely need sub-cent precision in coordinates. |
-| Clipboard copy format | `123.45, 67.89` — the bare coordinate pair without labels, ready to paste as arguments to `SETXY` or `EXTMARKER`. |
-| Copy trigger | Click anywhere on the coordinate line in the tooltip. No separate copy button needed given the small target. |
 
 ## Acceptance criteria
 
@@ -58,12 +55,6 @@ Feature: Coordinate readout on preview hover
     When the user moves the cursor along the segment
     Then the displayed coordinate updates continuously to reflect the new cursor position
 
-  Scenario: Clicking the coordinate copies to clipboard
-    Given the tooltip is showing a coordinate of x: 123.45, y: 67.89
-    When the user clicks the coordinate line
-    Then the clipboard contains "123.45, 67.89"
-    And no labels or extra text are included
-
   Scenario: Coordinate is correct after zoom or pan
     Given the preview has been zoomed or panned
     When the user hovers a segment
@@ -78,7 +69,6 @@ Feature: Coordinate readout on preview hover
 3. Confirm the tooltip shows three pieces of information: source line, segment length, and a coordinate in the format `x: NNN.NN, y: NNN.NN`.
 4. Move the cursor along the segment and confirm the coordinate values change continuously as the cursor moves.
 5. Move the cursor away from all segments and confirm the tooltip disappears entirely.
-6. While hovering a segment, click the coordinate line. Open a text editor or the script editor and paste — confirm the pasted text is `NNN.NN, NNN.NN` with no labels.
 7. If zoom/pan is available: zoom in or pan the preview, then hover a segment and confirm the displayed coordinate still makes sense relative to the Logo script geometry (e.g. hovering the end of a `FORWARD 100` segment should show a coordinate around `(0, 100)` depending on heading).
 
 ## Implementation tasks
@@ -96,7 +86,3 @@ Feature: Coordinate readout on preview hover
    - In the tooltip JSX (around line 198–222 of `Preview.tsx`), add a new `Typography` line below the existing length line.
    - Format as `x: {logoX.toFixed(2)}, y: {logoY.toFixed(2)}`.
    - Wrap the line in a clickable element (e.g. `Box` with `onClick` and `sx={{ cursor: 'pointer' }}`).
-
-4. **Clipboard copy on click**
-   - In the click handler, call `navigator.clipboard.writeText(`${logoX.toFixed(2)}, ${logoY.toFixed(2)}`)`.
-   - Optionally show brief visual feedback (e.g. change text to "Copied!" for 1s) — keep it lightweight.

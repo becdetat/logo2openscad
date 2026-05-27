@@ -2,6 +2,7 @@ import type { LogoSegment, Marker } from './types.js'
 
 export type PreviewLayout = {
   toScreen: (p: { x: number; y: number }) => { x: number; y: number }
+  fromScreen: (p: { x: number; y: number }) => { x: number; y: number }
 }
 
 export type RenderablePreviewSegment = {
@@ -40,6 +41,10 @@ export function createPreviewLayout(
     toScreen: (p: { x: number; y: number }) => ({
       x: centerX + (p.x - midX) * scale,
       y: centerY - (p.y - midY) * scale,
+    }),
+    fromScreen: (p: { x: number; y: number }) => ({
+      x: (p.x - centerX) / scale + midX,
+      y: midY - (p.y - centerY) / scale,
     }),
   }
 }

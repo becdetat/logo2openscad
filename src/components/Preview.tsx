@@ -6,6 +6,7 @@ import { useSettings } from "../hooks/useSettings";
 import type { LogoSegment, Marker } from "../logo/types";
 import { alpha, useTheme } from "@mui/material/styles";
 import { createPreviewLayout, drawPreview, getRenderablePreviewSegments } from "../logo/drawPreview";
+import type { PreviewLayout } from "../logo/drawPreview";
 import { clamp } from "../helpers/clamp";
 
 export type PreviewProps = {
@@ -24,15 +25,13 @@ export type PreviewProps = {
 export function Preview(props: PreviewProps) {
     const theme = useTheme();
     const canvasRef = useRef<HTMLCanvasElement | null>(null);
+    const layoutRef = useRef<PreviewLayout | null>(null);
     const { settings, setSettings } = useSettings();
-    const [hoveredSegment, setHoveredSegment] = useState<{ line: number; length: number; x: number; y: number } | null>(null);
+    const [hoveredSegment, setHoveredSegment] = useState<{ line: number; length: number; x: number; y: number; logoX: number; logoY: number } | null>(null);
+    const [coordCopied, setCoordCopied] = useState(false);
 
-    const findHoveredSegment = (canvasX: number, canvasY: number, displayX: number, displayY: number) => {
-        const canvas = canvasRef.current;
-        if (!canvas || props.activeSegments.length === 0) return null;
-
-        const layout = createPreviewLayout(canvas, props.activeSegments);
-        if (!layout) return null;
+    const findHoveredSegment = (layout: PreviewLayout, canvasX: number, canvasY: number, displayX: number, displayY: number) => {
+        if (props.activeSegments.length === 0) return null;
 
         const visibleSegments = getRenderablePreviewSegments(
             props.activeSegments,
@@ -121,7 +120,24 @@ export function Preview(props: PreviewProps) {
         const displayY = event.clientY - rect.top;
         const scaleX = rect.width > 0 ? canvas.width / rect.width : 1;
         const scaleY = rect.height > 0 ? canvas.height / rect.height : 1;
-        setHoveredSegment(findHoveredSegment(displayX * scaleX, displayY * scaleY, displayX, displayY));
+        const canvasX = displayX * scaleX;
+        const canvasY = displayY * scaleY;
+
+        const layout = createPreviewLayout(canvas, props.activeSegments);
+        layoutRef.current = layout;
+
+        if (!layout) {
+            setHoveredSegment(null);
+            return;
+        }
+
+        const match = findHoveredSegment(layout, canvasX, canvasY, displayX, displayY);
+        if (match) {
+            const logo = layout.fromScreen({ x: canvasX, y: canvasY });
+            setHoveredSegment({ ...match, logoX: logo.x, logoY: logo.y });
+        } else {
+            setHoveredSegment(null);
+        }
     };
 
     const handlePointerLeave = () => {
@@ -225,6 +241,19 @@ export function Preview(props: PreviewProps) {
                         </Typography>
                         <Typography variant="caption" display="block">
                             Length: {hoveredSegment.length.toFixed(2)}
+                        </Typography>
+                        <Typography
+                            variant="caption"
+                            display="block"
+                            onClick={(e) => {
+                                e.stopPropagation();
+                                navigator.clipboard.writeText(`${hoveredSegment.logoX.toFixed(2)}, ${hoveredSegment.logoY.toFixed(2)}`);
+                                setCoordCopied(true);
+                                setTimeout(() => setCoordCopied(false), 1000);
+                            }}
+                            sx={{ cursor: 'copy', userSelect: 'none' }}
+                        >
+                            {coordCopied ? 'Copied!' : `x: ${hoveredSegment.logoX.toFixed(2)}, y: ${hoveredSegment.logoY.toFixed(2)}`}
                         </Typography>
                     </Box>
                 )}
