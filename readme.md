@@ -211,7 +211,7 @@ docker run --rm -p 8080:80 logo2openscad:local
 
 Then open `http://localhost:8080`.
 
-### Publish to GHCR
+### Publish to GHCR (maintainers)
 
 Push a semantic version tag with a leading `v`:
 
