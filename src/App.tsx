@@ -3,13 +3,14 @@ import type * as Monaco from 'monaco-editor'
 import type { BeforeMount, OnMount } from '@monaco-editor/react'
 import { registerLogoLanguage } from './logo/monacoLanguage'
 import { Alert, Box, Snackbar, Typography } from '@mui/material'
-import { PanelGroup, Panel, type ImperativePanelGroupHandle } from 'react-resizable-panels'
+import { Group, Panel, type GroupImperativeHandle, useDefaultLayout } from 'react-resizable-panels'
 import { ResizeHandle } from './components/ResizeHandle'
 import { executeLogo } from './logo/interpreter'
 import { generateOpenScad } from './logo/openscad'
 import { parseLogo } from './logo/parser'
 import { useSettings } from './hooks/useSettings'
 import { useWorkspace, generateUntitledName, generateDuplicateName } from './hooks/useWorkspace'
+import type { LogoScript } from './types/workspace'
 import { useSidebarCollapsed } from './hooks/useSidebarCollapsed'
 import { HelpDialog } from './components/HelpDialog'
 import { SettingsDialog } from './components/SettingsDialog'
@@ -100,8 +101,9 @@ export default function App(props: AppProps) {
   const monacoRef = useRef<typeof Monaco | null>(null)
   const editorRef = useRef<Monaco.editor.IStandaloneCodeEditor | null>(null)
   const decorationsRef = useRef<string[]>([])
-  const panelGroupRef = useRef<ImperativePanelGroupHandle>(null)
+  const panelGroupRef = useRef<GroupImperativeHandle>(null)
   const runResultRef = useRef(runResult)
+  const { defaultLayout, onLayoutChanged } = useDefaultLayout({ id: 'logo2openscad-panels' })
 
   const handlePlay = useCallback(() => {
     setActiveSegments(runResult.segments)
@@ -278,7 +280,7 @@ export default function App(props: AppProps) {
 
   const handleResetPanelSizes = useCallback(() => {
     localStorage.removeItem('react-resizable-panels:logo2openscad-panels')
-    panelGroupRef.current?.setLayout([33.33, 33.33, 33.33])
+    panelGroupRef.current?.setLayout({ editor: 33.33, preview: 33.33, openscad: 33.33 })
   }, [])
 
   const handleSettingsOpen = () => setSettingsOpen(true)
@@ -401,7 +403,14 @@ export default function App(props: AppProps) {
         setImportErrorMessage('The export file contains no scripts array.')
         return
       }
-      const scripts = (ws as Record<string, unknown>).scripts as Partial<{ name: unknown; content: unknown; createdAt: unknown; updatedAt: unknown }>[]
+      const scripts = ((ws as Record<string, unknown>).scripts as unknown[])
+        .filter((item): item is Record<string, unknown> => typeof item === 'object' && item !== null)
+        .map((item): Partial<LogoScript> => ({
+          name: typeof item.name === 'string' ? item.name : undefined,
+          content: typeof item.content === 'string' ? item.content : undefined,
+          createdAt: typeof item.createdAt === 'number' ? item.createdAt : undefined,
+          updatedAt: typeof item.updatedAt === 'number' ? item.updatedAt : undefined,
+        }))
       const added = mergeImportedScripts(scripts)
       if (added === 0) {
         setImportSuccessMessage('No new scripts were imported.')
@@ -473,13 +482,15 @@ export default function App(props: AppProps) {
           onDeleteScript={handleDeleteScript}
         />
         
-        <PanelGroup
-          ref={panelGroupRef}
-          direction="horizontal"
-          autoSaveId="logo2openscad-panels"
+        <Group
+          groupRef={panelGroupRef}
+          id="logo2openscad-panels"
+          orientation="horizontal"
+          defaultLayout={defaultLayout}
+          onLayoutChanged={onLayoutChanged}
           style={{ flex: 1, minWidth: 0 }}
         >
-          <Panel id="editor" defaultSize={33.33} minSize={20}>
+          <Panel id="editor" defaultSize="33.33%" minSize="20%">
             <Box sx={{ height: '100%', display: 'flex' }}>
               <LogoEditor
                 scriptName={activeScript.name}
@@ -496,7 +507,7 @@ export default function App(props: AppProps) {
             </Box>
           </Panel>
           <ResizeHandle />
-          <Panel id="preview" defaultSize={33.33} minSize={20}>
+          <Panel id="preview" defaultSize="33.33%" minSize="20%">
             <Box sx={{ height: '100%', display: 'flex' }}>
               <Preview
                 isPlaying={isPlaying}
@@ -516,7 +527,7 @@ export default function App(props: AppProps) {
             </Box>
           </Panel>
           <ResizeHandle />
-          <Panel id="openscad" defaultSize={33.33} minSize={20}>
+          <Panel id="openscad" defaultSize="33.33%" minSize="20%">
             <Box sx={{ height: '100%', display: 'flex' }}>
               <OpenScadEditor
                 openScad={openScad}
@@ -526,7 +537,7 @@ export default function App(props: AppProps) {
               />
             </Box>
           </Panel>
-        </PanelGroup>
+        </Group>
       </Box>
 
       <SettingsDialog

@@ -1,9 +1,9 @@
-import { PanelResizeHandle } from 'react-resizable-panels'
+import { Separator } from 'react-resizable-panels'
 import { Box } from '@mui/material'
 
 export function ResizeHandle() {
     return (
-        <PanelResizeHandle>
+        <Separator>
             <Box
                 sx={{
                     width: 8,
@@ -25,7 +25,7 @@ export function ResizeHandle() {
                     '&:hover .grip-dot': {
                         opacity: 1,
                     },
-                    '[data-resize-handle-active] & .grip-dot': {
+                    '[data-separator][data-resize-handle-active] & .grip-dot': {
                         opacity: 1,
                         backgroundColor: 'primary.main',
                     },
@@ -35,6 +35,6 @@ export function ResizeHandle() {
                 <Box className="grip-dot" />
                 <Box className="grip-dot" />
             </Box>
-        </PanelResizeHandle>
+        </Separator>
     )
 }
